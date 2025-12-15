@@ -1,0 +1,203 @@
+{
+  "general": {
+    "select": "Select",
+    "ready": "Ready to Get Started?",
+    "bookNow": "Book Now",
+    "whatsapp": "Contact on WhatsApp"
+  },
+  "centerName": "AL-Emad Center for Physiotherapy",
+  "vision": "The continuous pursuit of self-development to ensure the delivery of excellent, impactful, and effective treatment programs",
+  "values": "Flexibility in work | Competence and professionalism | Justice and transparency | Commitment to quality | Innovation and creativity | Social responsibility",
+  "directorProfile": {
+    "name": "Nidal Suleiman Abu Saleem",
+    "position": "Center Founder & Director",
+    "bio": "An overview of the director of Al-Emad Physical Therapy Center",
+    "qualifications": [
+      "Master of Clinical Rehabilitation Sciences, Jordan University of Science and Technology",
+      "Former lecturer in Neuropediatric at the Department of Science and Rehabilitation at the University of Jordan",
+      "The first to establish and manage the intensive physical therapy program in the Hashemite Kingdom of Jordan",
+      "Head of the Early Intervention Program (EIP) at Al Hussein Association",
+      "Relationships with many of the most important and famous doctors in the world, cooperating with them for the benefit of patients"
+    ]
+  },
+  "departments": {
+    "adult": {
+      "title": "Adult Physiotherapy Department",
+      "intro": "Comprehensive physiotherapy and rehabilitation program for adults treating various medical conditions and musculoskeletal injuries",
+      "methods": [
+        "Therapeutic Exercises (Therapeutic Exercises)",
+        "Muscle Release Techniques (Muscle Release Techniques)",
+        "Manual Therapy and Medical Massage (Manual Therapy & Massage)",
+        "Electrotherapy and Ultrasound (Electrotherapy & Ultrasound)",
+        "Hydrotherapy (Hydrotherapy)"
+      ],
+      "conditions": [
+        "Back and spinal pain",
+        "Neck and cervical pain",
+        "Joint pain and arthritis",
+        "Upper and lower limb injuries",
+        "Post-surgery and post-operation",
+        "Hemiplegia and neurological conditions",
+        "Muscle weakness and spasms",
+        "Posture correction"
+      ]
+    },
+    "pediatric": {
+      "title": "Pediatric Physiotherapy Department",
+      "intro": "Specialized program for child treatment focusing on motor development and proper growth using interactive and fun methods",
+      "conditions": [
+        "Cerebral palsy of all kinds",
+        "Spina bifida",
+        "Muscular atrophy of all kinds",
+        "Syndromes of all kinds",
+        "Motor delay",
+        "Bone and muscle diseases",
+        "Congenital or acquired joint and bone disorders",
+        "Rehabilitation after surgical operations (tendon lengthening and SDR)",
+        "Pulmonary diseases and respiratory disorders"
+      ],
+      "therapy": "Play-Based Therapy and Movement (Play-Based Therapy) with interactive and fun activities to help the child develop properly"
+    },
+    "intensive": {
+      "title": "Intensive Physiotherapy Program",
+      "intro": "Specialized program for critical and complex cases requiring intensive and rapid treatment with close monitoring",
+      "methods": [
+        "Advanced Manual Therapy (Advanced Manual Therapy)",
+        "Advanced stretching and strengthening techniques",
+        "Neurological Rehabilitation (Neuro-Rehabilitation)",
+        "Specialized functional training",
+        "Customized programs for complex cases"
+      ],
+      "duration": "Session duration from 45 minutes to 4 hours depending on patient needs",
+      "benefits": [
+        "Accelerated recovery process",
+        "Significant and rapid improvement in motor performance",
+        "Marked pain reduction",
+        "Strength and flexibility restoration",
+        "Improved quality of life",
+        "Prevention of complications",
+        "Rapid rehabilitation for return to daily activities"
+      ]
+    }
+  },
+  "techniques": {
+    "title": "Therapeutic Techniques Used",
+    "list": [
+      "Stretching and muscle strengthening techniques",
+      "Release of tense and stuck muscles",
+      "Medical massage in various types",
+      "Manual therapy and joint adjustments",
+      "Deep tissue massage",
+      "Heat and cold therapy",
+      "Specialized programs for prevention and development"
+    ]
+  },
+  "contact": {
+    "phones": "+962 7 9570 2165 – +962 7 9552 0905",
+    "landline": "06-2225228",
+    "location": "Manhal Circle, Ziad Al-Sharaan building Al Jubaiha, Jordan",
+    "locationUrl": "https://www.google.com/maps/dir//yajouz+street,+Amman/@31.8952863,35.8636171,14z/data=!4m8!4m7!1m0!1m5!1m1!1s0x151c9f61464cfd5d:0xd88e8108008fba7a!2m2!1d35.8722784!2d32.0301009?entry=ttu&g_ep=EgoyMDI1MTIwMi4wIKXMDSoASAFQAw%3D%3D",
+    "whatsapp": "+962 7 9570 2165",
+    "email": "alemad1pt@gmail.com",
+    "instagram": "https://www.instagram.com/alemad_physio?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
+    "facebook": "https://www.facebook.com/Nedal.Med.Suit",
+    "quickContact": "Quick Contact",
+    "primaryNumbers": "Primary Numbers:",
+    "landlineLabel": "Landline:",
+    "quickContactText": "Feel free to call us or send a WhatsApp message. Our team is ready to help you with any inquiries about our services or to schedule an appointment."
+  },
+  "header": {
+    "home": "Home",
+    "about": "About",
+    "services": "Services",
+    "booking": "Booking",
+    "contact": "Contact",
+    "therapists": "Therapists"
+  },
+  "hero": {
+    "title": "AL-Emad Center for Physiotherapy",
+    "subtitle": "The continuous pursuit of self-development to ensure the delivery of excellent, impactful, and effective treatment programs",
+    "cta": "Book Your Appointment Now"
+  },
+  "services": {
+    "title": "Our Services",
+    "physiotherapy": "Physiotherapy",
+    "physiotherapyDesc": "Professional physiotherapy treatments for pain relief",
+    "massage": "Massage Therapy",
+    "massageDesc": "Therapeutic massage to relax muscles and reduce tension",
+    "rehabilitation": "Rehabilitation",
+    "rehabilitationDesc": "Complete rehabilitation programs for injury recovery",
+    "sports": "Sports Medicine",
+    "sportsDesc": "Sports medicine and athletic performance enhancement"
+  },
+  "about": {
+    "title": "About Our Center",
+    "centerName": "AL-Emad Center for Physiotherapy",
+    "content": "We are a specialized center in physiotherapy and rehabilitation with a team of expert professionals dedicated to providing the highest quality care and treatment.",
+    "vision": "The continuous pursuit of self-development to ensure the delivery of excellent, impactful, and effective treatment programs",
+    "values": "Flexibility in work | Competence and professionalism | Justice and transparency | Commitment to quality | Innovation and creativity | Social responsibility",
+    "directorProfileHeading": "Director Profile",
+    "directorName": "Nidal Suleiman Abu Saleem",
+    "directorPosition": "Center Founder & Director",
+    "professionalBackground": "Professional Background:",
+    "bgPhysiotherapy": "Physiotherapy Specialist with a Master's degree in Clinical Rehabilitation Sciences from the Jordan University of Science and Technology",
+    "bgLecturer": "Former Lecturer in Pediatric Neurology at the Department of Rehabilitation Sciences at the University of Jordan",
+    "bgPioneer": "Pioneer: First to establish and manage intensive physiotherapy programs in the Hashemite Kingdom of Jordan",
+    "bgEIP": "Director of Early Intervention Program (EIP) at Al-Hussein Society",
+    "bgCollaboration": "International Collaborations: Maintains strong relationships with renowned doctors and experts worldwide, collaborating for patients' benefit",
+    "certifications": "Certifications & Qualifications:",
+    "certBachelor": "Bachelor's Degree in Physiotherapy from Amman Ahliyya University",
+    "certMaster": "Master's Degree in Sports Medicine from the Middle East University",
+    "certDiploma1": "Diploma in Cupping and Therapeutic Massage",
+    "certDiploma2": "Diploma in Quranic Therapy",
+    "certCPR": "First Aid and CPR (Cardiopulmonary Resuscitation) Certification",
+    "mission": "Our Mission",
+    "missionContent": "We are committed to providing world-class physiotherapy services that help our patients recover from injuries, manage pain, and improve their quality of life.",
+    "team": "Our Professional Team",
+    "teamContent": "Our dedicated team of experienced physiotherapists and specialists is committed to providing exceptional care and treatment for every patient. Each team member brings expertise and passion for helping patients achieve their recovery goals.",
+    "why": "Why Choose Us?",
+    "whyList": [
+      "Experienced professionals with certified credentials",
+      "Modern facilities and advanced equipment",
+      "Personalized treatment programs",
+      "Compassionate and professional care"
+    ]
+  },
+  "booking": {
+    "title": "Book Your Appointment",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "date": "Date",
+    "time": "Time",
+    "service": "Service",
+    "therapist": "Select Therapist",
+    "submit": "Book Appointment",
+    "success": "Appointment booked successfully! Redirecting...",
+    "error": "Failed to book appointment. Please try again.",
+    "fullName": "Full Name",
+    "age": "Age",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
+    "other": "Other",
+    "patientInfo": "Patient Information",
+    "existingPatient": "Existing Patient",
+    "selectPatient": "Select existing patient or create new"
+  },
+  "footer": {
+    "copyright": "© 2025 AL-Emad Center for Physiotherapy. All rights reserved.",
+    "followUs": "Follow Us",
+    "quickLinks": "Quick Links",
+    "aboutUs": "About Us",
+    "services": "Services",
+    "contact": "Contact"
+  },
+  "contactPage": {
+    "title": "Contact Us",
+    "quickContact": "Quick Contact",
+    "primaryNumbers": "Phone",
+    "landlineLabel": "Landline",
+    "quickContactText": "Feel free to contact us for any questions or to schedule an appointment."
+  }
+}
