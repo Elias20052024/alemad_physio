@@ -85,6 +85,8 @@ model TherapistDayOff {
 model Patient {
   id           Int     @id @default(autoincrement())
   fullName     String
+  email        String  @unique
+  password     String  // hashed
   phone        String
   age          Int
   gender       String

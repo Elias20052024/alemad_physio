@@ -6,6 +6,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import DarkModeToggle from '../components/DarkModeToggle';
 import ModernLoginButton from '../components/ModernLoginButton';
+import { patientAPI } from '../services/api';
 
 const Login = () => {
   const { t, language } = useLanguage();
@@ -19,6 +20,8 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
@@ -73,6 +76,8 @@ const Login = () => {
     setPassword('');
     setConfirmPassword('');
     setPhone('');
+    setAge('');
+    setGender('');
     setIsSignUp(false);
   };
 
@@ -82,9 +87,10 @@ const Login = () => {
     setLoading(true);
 
     try {
-      if (isSignUp) {
+      // Patient signup
+      if (tabValue === 0 && isSignUp) {
         // Sign Up validation
-        if (!name || !email || !password || !confirmPassword || !phone) {
+        if (!name || !email || !password || !confirmPassword || !phone || !age || !gender) {
           setError(language === 'ar' ? 'يرجى ملء جميع الحقول' : 'Please fill all fields');
           setLoading(false);
           return;
@@ -114,19 +120,44 @@ const Login = () => {
           return;
         }
 
-        // TODO: Call API to create patient account
-        // For now, just store in localStorage
+        // Call API to register patient
+        const { data } = await patientAPI.register(name, email, password, phone, age, gender);
+        
+        // Store token and patient info
+        localStorage.setItem('token', data.token);
         localStorage.setItem('userRole', 'patient');
-        localStorage.setItem('userName', name);
-        localStorage.setItem('userEmail', email);
-        localStorage.setItem('userPhone', phone);
+        localStorage.setItem('patientId', data.patient.id);
+        localStorage.setItem('userName', data.patient.fullName);
+        localStorage.setItem('userEmail', data.patient.email);
         localStorage.setItem('isLoggedIn', 'true');
 
         setError('');
         navigate('/patient-dashboard');
-      } else {
-        // Login logic
-        // TODO: Replace with actual API call
+      } 
+      // Patient login
+      else if (tabValue === 0 && !isSignUp) {
+        if (!email || !password) {
+          setError(language === 'ar' ? 'يرجى ملء جميع الحقول' : 'Please fill all fields');
+          setLoading(false);
+          return;
+        }
+
+        // Call API to login patient
+        const { data } = await patientAPI.login(email, password);
+        
+        // Store token and patient info
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userRole', 'patient');
+        localStorage.setItem('patientId', data.patient.id);
+        localStorage.setItem('userName', data.patient.fullName);
+        localStorage.setItem('userEmail', data.patient.email);
+        localStorage.setItem('isLoggedIn', 'true');
+
+        setError('');
+        navigate('/patient-dashboard');
+      }
+      // Other roles (therapist, admin) - keep mock logic for now
+      else {
         const roleMap = {
           0: 'patient',
           1: 'therapist',
@@ -134,23 +165,15 @@ const Login = () => {
         };
         const role = roleMap[tabValue];
 
-        // Mock validation
+        // Mock validation for non-patient roles
         if (!name || !email || !password) {
           setError(language === 'ar' ? 'يرجى ملء جميع الحقول' : 'Please fill all fields');
           setLoading(false);
           return;
         }
 
-        // Validate email format
         if (!validateEmail(email)) {
           setEmailError(language === 'ar' ? 'البريد الإلكتروني غير صحيح' : 'Invalid email address');
-          setLoading(false);
-          return;
-        }
-
-        // Validate password strength
-        if (passwordStrength < 40) {
-          setError(language === 'ar' ? 'كلمة المرور ضعيفة جداً. استخدم أحرفاً كبيرة وصغيرة وأرقام' : 'Password is too weak. Use uppercase, lowercase, and numbers');
           setLoading(false);
           return;
         }
@@ -162,16 +185,15 @@ const Login = () => {
         localStorage.setItem('isLoggedIn', 'true');
 
         // Redirect based on role
-        if (role === 'patient') {
-          navigate('/patient-dashboard');
-        } else if (role === 'therapist') {
+        if (role === 'therapist') {
           navigate('/therapist-portal');
         } else if (role === 'admin') {
           navigate('/admin-portal');
         }
       }
     } catch (err) {
-      setError(language === 'ar' ? 'فشل تسجيل الدخول' : 'Login failed');
+      const errorMessage = err.response?.data?.message || (language === 'ar' ? 'فشل تسجيل الدخول' : 'Login failed');
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

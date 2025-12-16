@@ -31,6 +31,7 @@ import ManageAppointments from './admin/ManageAppointments';
 // User Portal Pages
 import Login from './pages/Login';
 import PatientDashboard from './pages/PatientDashboard';
+import PatientDashboardDB from './pages/PatientDashboardDB';
 import TherapistPortal from './pages/TherapistPortal';
 import AdminPortal from './pages/AdminPortal';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -144,7 +145,7 @@ const AppContent = () => {
                     path="/patient-dashboard"
                     element={
                       <ProtectedRoute allowedRoles={['patient']}>
-                        <PatientDashboard />
+                        <PatientDashboardDB />
                       </ProtectedRoute>
                     }
                   />
@@ -161,6 +162,14 @@ const AppContent = () => {
                     element={
                       <ProtectedRoute allowedRoles={['admin']}>
                         <AdminPortal />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/patient/dashboard"
+                    element={
+                      <ProtectedRoute allowedRoles={['patient']}>
+                        <PatientDashboardDB />
                       </ProtectedRoute>
                     }
                   />

@@ -1,4 +1,6 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
 
@@ -152,5 +154,114 @@ export const getPatientAppointments = async (req, res) => {
     res.json(appointments);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching appointments', error: error.message });
+  }
+};
+
+// ============================================
+// PATIENT AUTHENTICATION
+// ============================================
+
+export const registerPatient = async (req, res) => {
+  try {
+    const { fullName, email, password, phone, age, gender } = req.body;
+
+    // Validate required fields
+    if (!fullName || !email || !password || !phone || !age || !gender) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    // Check if patient already exists
+    const existingPatient = await prisma.patient.findUnique({
+      where: { email }
+    });
+
+    if (existingPatient) {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create patient
+    const patient = await prisma.patient.create({
+      data: {
+        fullName,
+        email,
+        password: hashedPassword,
+        phone,
+        age: parseInt(age),
+        gender
+      }
+    });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: patient.id, email: patient.email, role: 'patient' },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.status(201).json({
+      message: 'Patient registered successfully',
+      token,
+      patient: {
+        id: patient.id,
+        fullName: patient.fullName,
+        email: patient.email,
+        phone: patient.phone,
+        age: patient.age,
+        gender: patient.gender
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Registration failed', error: error.message });
+  }
+};
+
+export const loginPatient = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password required' });
+    }
+
+    // Find patient
+    const patient = await prisma.patient.findUnique({
+      where: { email }
+    });
+
+    if (!patient) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // Check password
+    const passwordMatch = await bcrypt.compare(password, patient.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: patient.id, email: patient.email, role: 'patient' },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      message: 'Login successful',
+      token,
+      patient: {
+        id: patient.id,
+        fullName: patient.fullName,
+        email: patient.email,
+        phone: patient.phone,
+        age: patient.age,
+        gender: patient.gender
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Login failed', error: error.message });
   }
 };

@@ -5,11 +5,17 @@ import {
   createPatient,
   updatePatient,
   deletePatient,
-  getPatientAppointments
+  getPatientAppointments,
+  registerPatient,
+  loginPatient
 } from '../controllers/patientController.js';
 import { authenticateAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// Public auth routes
+router.post('/register', registerPatient);
+router.post('/login', loginPatient);
 
 // Public routes
 router.get('/', getAllPatients);

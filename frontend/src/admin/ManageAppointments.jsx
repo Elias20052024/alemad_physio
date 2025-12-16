@@ -19,26 +19,63 @@ import {
   Grid,
   Select,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Stack,
+  Alert,
 } from '@mui/material';
-import { Delete as DeleteIcon } from '@mui/icons-material';
-import { appointmentService } from '@services/apiService.js';
+import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import { appointmentAPI, patientAPI, therapistAPI } from '@/services/api';
 
 const ManageAppointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [patients, setPatients] = useState([]);
+  const [therapists, setTherapists] = useState([]);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [editData, setEditData] = useState({});
   const [filters, setFilters] = useState({
     status: '',
+    therapistId: '',
+    patientId: '',
     date: '',
   });
+
+  useEffect(() => {
+    fetchInitialData();
+  }, []);
 
   useEffect(() => {
     fetchAppointments();
   }, [filters]);
 
+  const fetchInitialData = async () => {
+    try {
+      const [patientsRes, therapistsRes] = await Promise.all([
+        patientAPI.getAll(),
+        therapistAPI.getAll(),
+      ]);
+      setPatients(patientsRes.data);
+      setTherapists(therapistsRes.data);
+      fetchAppointments();
+    } catch (error) {
+      console.error('Error fetching initial data:', error);
+    }
+  };
+
   const fetchAppointments = async () => {
     try {
-      const response = await appointmentService.getAppointments(filters);
-      setAppointments(response.data);
+      setLoading(true);
+      const { data } = await appointmentAPI.getAll({
+        status: filters.status || undefined,
+        therapistId: filters.therapistId || undefined,
+        patientId: filters.patientId || undefined,
+        date: filters.date || undefined,
+      });
+      setAppointments(data);
     } catch (error) {
       console.error('Error fetching appointments:', error);
     } finally {
@@ -46,34 +83,48 @@ const ManageAppointments = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this appointment?')) {
-      try {
-        await appointmentService.deleteAppointment(id);
-        await fetchAppointments();
-      } catch (error) {
-        console.error('Error deleting appointment:', error);
-      }
+  const handleEdit = (appointment) => {
+    setSelectedAppointment(appointment);
+    setEditData({
+      ...appointment,
+      date: new Date(appointment.date).toISOString().split('T')[0],
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      const appointmentDateTime = new Date(`${editData.date}T${editData.time}`);
+      await appointmentAPI.update(selectedAppointment.id, {
+        ...editData,
+        date: appointmentDateTime.toISOString(),
+      });
+      setEditDialogOpen(false);
+      await fetchAppointments();
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      alert('Failed to update appointment');
     }
   };
 
   const handleStatusChange = async (id, newStatus) => {
     try {
-      await appointmentService.updateAppointment(id, { status: newStatus });
+      await appointmentAPI.updateStatus(id, newStatus);
       await fetchAppointments();
     } catch (error) {
-      console.error('Error updating appointment status:', error);
-      alert('Failed to update appointment status');
+      console.error('Error updating status:', error);
+      alert('Failed to update status');
     }
   };
 
-  const handleCancel = async (id) => {
-    if (window.confirm('Are you sure you want to cancel this appointment?')) {
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this appointment?')) {
       try {
-        await appointmentService.cancelAppointment(id);
+        await appointmentAPI.delete(id);
         await fetchAppointments();
       } catch (error) {
-        console.error('Error cancelling appointment:', error);
+        console.error('Error deleting appointment:', error);
+        alert('Failed to delete appointment');
       }
     }
   };
@@ -87,7 +138,17 @@ const ManageAppointments = () => {
     return colors[status] || 'default';
   };
 
-  if (loading) {
+  const getPatientName = (patientId) => {
+    const patient = patients.find(p => p.id === patientId);
+    return patient?.fullName || 'Unknown';
+  };
+
+  const getTherapistName = (therapistId) => {
+    const therapist = therapists.find(t => t.id === therapistId);
+    return therapist?.name || 'Unknown';
+  };
+
+  if (loading && appointments.length === 0) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
         <CircularProgress />
@@ -98,7 +159,7 @@ const ManageAppointments = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
-        Manage Appointments
+        📅 Manage Appointments
       </Typography>
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
