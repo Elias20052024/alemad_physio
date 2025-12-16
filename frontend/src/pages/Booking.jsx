@@ -54,7 +54,7 @@ const Booking = () => {
     setMessage('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/booking', {
+      const response = await fetch('https://alemad-physio.onrender.com/api/booking', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
