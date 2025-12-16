@@ -20,6 +20,8 @@ const Booking = () => {
   const { t } = useLanguage();
   const theme = useTheme();
 
+  console.log('✅ Booking component loaded successfully');
+
   // Animation keyframes
   const fadeInUp = keyframes`
     from {
