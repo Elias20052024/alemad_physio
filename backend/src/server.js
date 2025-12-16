@@ -9,7 +9,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import therapistRoutes from './routes/therapistRoutes.js';
 import patientRoutes from './routes/patientRoutes.js';
 import appointmentRoutes from './routes/appointmentRoutes.js';
-import bookingRoutes from '../routes/booking.js';
+import bookingRoutes from './routes/bookingRoutes.js';
 
 dotenv.config();
 
