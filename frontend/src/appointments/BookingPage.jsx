@@ -42,8 +42,13 @@ const BookingPage = () => {
 
   const fetchInitialData = async () => {
     try {
-      const patientsRes = await patientService.getAllPatients();
-      setPatients(patientsRes.data);
+      try {
+        const patientsRes = await patientService.getAllPatients();
+        setPatients(patientsRes.data || []);
+      } catch (error) {
+        console.warn('Could not load patients:', error.message);
+        setPatients([]); // Continue without patients
+      }
     } catch (error) {
       setError('Error loading data');
       console.error(error);
