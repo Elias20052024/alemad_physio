@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int     @id @default(autoincrement())
+  email     String  @unique
+  password  String
+  name      String
+  role      String  // admin, therapist, patient
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  patient   Patient?
+  therapist Therapist?
+  admin     Admin?
+}
+
+model Patient {
+  id            Int     @id @default(autoincrement())
+  userId        Int     @unique
+  phone         String?
+  dateOfBirth   DateTime?
+  gender        String?
+  medicalHistory String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments  Appointment[]
+}
+
+model Therapist {
+  id            Int     @id @default(autoincrement())
+  userId        Int     @unique
+  specialization String?
+  phone         String?
+  availability  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments  Appointment[]
+}
+
+model Admin {
+  id        Int     @id @default(autoincrement())
+  userId    Int     @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Appointment {
+  id            Int     @id @default(autoincrement())
+  patientId     Int
+  therapistId   Int
+  appointmentDate DateTime
+  startTime     String
+  endTime       String
+  status        String  @default("pending") // pending, confirmed, completed, cancelled
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  patient       Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  therapist     Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([therapistId])
+  @@index([appointmentDate])
+}
+
+model Service {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  duration    Int     // in minutes
+  price       Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
