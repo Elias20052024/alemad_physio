@@ -19,7 +19,7 @@ import Contact from './pages/Contact';
 import TherapistList from './pages/TherapistList';
 
 // Appointment Pages
-import BookingPage from './appointments/BookingPage';
+import Booking from './pages/Booking';
 
 // Admin Pages
 import AdminLogin from './admin/AdminLogin';
@@ -135,7 +135,7 @@ const AppContent = () => {
                   <Route path="/" element={<Home />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/services" element={<Services />} />
-                  <Route path="/booking" element={<BookingPage />} />
+                  <Route path="/booking" element={<Booking />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/therapists" element={<TherapistList />} />
                   
