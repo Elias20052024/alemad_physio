@@ -31,21 +31,20 @@ export const createBooking = async (req, res) => {
       });
     }
 
-    // Create appointment in database
-    const appointment = await prisma.appointment.create({
+    // Create booking in Booking table (not Appointment)
+    const booking = await prisma.booking.create({
       data: {
-        patientId: 1, // Default patient ID (you can change this logic later)
-        therapistId: 1, // Default therapist ID (you can change this logic later)
-        appointmentDate: bookingDate,
-        startTime: '10:00', // Default time
-        endTime: '11:00', // Default duration 1 hour
+        name,
+        phone,
+        service,
+        date: bookingDate,
+        message: message || '',
         status: 'pending',
-        notes: message || `Booking: ${service}`,
       },
     });
 
     console.log('✅ New booking created:', {
-      id: appointment.id,
+      id: booking.id,
       name,
       phone,
       service,
@@ -56,11 +55,11 @@ export const createBooking = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Booking received successfully. We will contact you soon!',
-      bookingId: appointment.id,
-      appointment: {
-        id: appointment.id,
-        date: appointment.appointmentDate,
-        status: appointment.status,
+      bookingId: booking.id,
+      booking: {
+        id: booking.id,
+        date: booking.date,
+        status: booking.status,
       },
     });
   } catch (error) {
@@ -75,21 +74,14 @@ export const createBooking = async (req, res) => {
 
 export const getAllBookings = async (req, res) => {
   try {
-    const appointments = await prisma.appointment.findMany({
-      where: {
-        status: 'pending', // Get pending bookings
-      },
-      include: {
-        patient: true,
-        therapist: true,
-      },
+    const bookings = await prisma.booking.findMany({
       orderBy: { createdAt: 'desc' },
     });
 
     res.json({
       success: true,
-      count: appointments.length,
-      data: appointments,
+      count: bookings.length,
+      data: bookings,
     });
   } catch (error) {
     console.error('Error fetching bookings:', error);
@@ -105,15 +97,11 @@ export const getBookingById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const appointment = await prisma.appointment.findUnique({
+    const booking = await prisma.booking.findUnique({
       where: { id: parseInt(id) },
-      include: {
-        patient: true,
-        therapist: true,
-      },
     });
 
-    if (!appointment) {
+    if (!booking) {
       return res.status(404).json({
         success: false,
         message: 'Booking not found',
@@ -122,7 +110,7 @@ export const getBookingById = async (req, res) => {
 
     res.json({
       success: true,
-      data: appointment,
+      data: booking,
     });
   } catch (error) {
     console.error('Error fetching booking:', error);
@@ -147,19 +135,15 @@ export const updateBookingStatus = async (req, res) => {
       });
     }
 
-    const appointment = await prisma.appointment.update({
+    const booking = await prisma.booking.update({
       where: { id: parseInt(id) },
       data: { status },
-      include: {
-        patient: true,
-        therapist: true,
-      },
     });
 
     res.json({
       success: true,
       message: 'Booking status updated',
-      data: appointment,
+      data: booking,
     });
   } catch (error) {
     console.error('Error updating booking:', error);
@@ -175,14 +159,14 @@ export const deleteBooking = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const appointment = await prisma.appointment.delete({
+    const booking = await prisma.booking.delete({
       where: { id: parseInt(id) },
     });
 
     res.json({
       success: true,
       message: 'Booking deleted successfully',
-      data: appointment,
+      data: booking,
     });
   } catch (error) {
     console.error('Error deleting booking:', error);
