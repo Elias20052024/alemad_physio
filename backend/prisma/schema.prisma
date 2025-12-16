@@ -94,3 +94,38 @@ model Service {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model Booking {
+  id            Int     @id @default(autoincrement())
+  name          String
+  phone         String
+  service       String
+  date          DateTime
+  message       String?
+  status        String  @default("pending") // pending, confirmed, completed, cancelled
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([date])
+  @@index([status])
+  @@index([phone])
+}
+
+model LoginLog {
+  id        Int     @id @default(autoincrement())
+  userId    Int?
+  email     String?
+  role      String?
+  loginTime DateTime @default(now())
+  logoutTime DateTime?
+  ipAddress String?
+  userAgent String?
+  status    String   @default("success") // success, failed
+  reason    String?  // reason for failed login
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([email])
+  @@index([loginTime])
+  @@index([status])
+}
