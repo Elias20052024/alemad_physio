@@ -126,7 +126,7 @@ const Header = () => {
             >
               <Box
                 component="img"
-                src={language === 'ar' ? '/logo/logo.ar.png' : '/logo/logo.en.png'}
+                src={language === 'ar' ? new URL('/public/logo/logo.ar.png', import.meta.url).href : new URL('/public/logo/logo.en.png', import.meta.url).href}
                 alt="Alemad Physio"
                 sx={{
                   height: { xs: 60, sm: 70, md: 80 },

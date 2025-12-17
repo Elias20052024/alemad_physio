@@ -199,5 +199,17 @@
     "primaryNumbers": "الهواتف",
     "landlineLabel": "الهاتف الأرضي",
     "quickContactText": "لا تتردد في التواصل معنا لأي استفسارات أو لحجز موعد."
+  },
+  "tabs": {
+    "adult": "قسم العلاج الطبيعي للبالغين",
+    "pediatric": "قسم العلاج الطبيعي للأطفال",
+    "intensive": "برنامج العلاج الطبيعي المكثف"
+  },
+  "sectionLabels": {
+    "treatmentMethods": "طرق العلاج:",
+    "conditionsTreated": "الحالات المعالجة:",
+    "therapyApproach": "نهج العلاج:",
+    "benefits": "الفوائد:",
+    "sessionDuration": "مدة الجلسة:"
   }
 }

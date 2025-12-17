@@ -8,7 +8,8 @@ import {
   getTherapistSchedule,
   createTherapistSchedule,
   createTherapistBreak,
-  createTherapistDayOff
+  createTherapistDayOff,
+  loginTherapist
 } from '../controllers/therapistController.js';
 import { authenticateAdmin } from '../middleware/auth.js';
 
@@ -17,6 +18,7 @@ const router = express.Router();
 // Public routes
 router.get('/', getAllTherapists);
 router.get('/:id', getTherapistById);
+router.post('/login', loginTherapist);
 
 // Admin routes (protected)
 router.post('/', authenticateAdmin, createTherapist);

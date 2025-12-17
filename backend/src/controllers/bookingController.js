@@ -1,10 +1,11 @@
 import { PrismaClient } from '@prisma/client';
+import { sendBookingNotificationToAdmin, sendBookingConfirmationToClient } from '../utils/email.js';
 
 const prisma = new PrismaClient();
 
 export const createBooking = async (req, res) => {
   try {
-    const { name, phone, service, date, message } = req.body;
+    const { name, phone, service, date, message, email } = req.body;
 
     // Validation
     if (!name || !phone || !service || !date) {
@@ -51,6 +52,12 @@ export const createBooking = async (req, res) => {
       date,
       message,
     });
+
+    // Send email notifications
+    await sendBookingNotificationToAdmin(booking);
+    if (email) {
+      await sendBookingConfirmationToClient({ ...booking, email });
+    }
 
     res.status(201).json({
       success: true,

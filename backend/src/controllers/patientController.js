@@ -7,7 +7,10 @@ const prisma = new PrismaClient();
 export const getAllPatients = async (req, res) => {
   try {
     const patients = await prisma.patient.findMany({
-      include: { appointments: true }
+      include: { 
+        user: true,
+        appointments: true 
+      }
     });
     res.json(patients || []);
   } catch (error) {
@@ -42,11 +45,11 @@ export const getPatientById = async (req, res) => {
 
 export const createPatient = async (req, res) => {
   try {
-    const { fullName, phone, age, gender, medicalHistory } = req.body;
+    const { fullName, phone, gender, medicalHistory, email, password } = req.body;
 
     // Validate all required fields
-    if (!fullName || !phone || !age || !gender) {
-      return res.status(400).json({ message: 'All required fields missing: fullName, phone, age, gender' });
+    if (!fullName || !phone || !gender) {
+      return res.status(400).json({ message: 'All required fields missing: fullName, phone, gender' });
     }
 
     // Validate name is not empty
@@ -54,16 +57,24 @@ export const createPatient = async (req, res) => {
       return res.status(400).json({ message: 'Full name cannot be empty' });
     }
 
-    // Validate phone format
-    const phoneRegex = /^[0-9+\-\s()]+$/;
-    if (!phoneRegex.test(phone) || phone.length < 7) {
-      return res.status(400).json({ message: 'Invalid phone number format' });
+    // Validate email format if provided
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: 'Invalid email format' });
+      }
+      
+      // Check if email already exists
+      const existingUser = await prisma.user.findUnique({ where: { email } });
+      if (existingUser) {
+        return res.status(409).json({ message: 'Email already registered' });
+      }
     }
 
-    // Validate age is a positive number within reasonable range
-    const ageNum = parseInt(age);
-    if (isNaN(ageNum) || ageNum < 0 || ageNum > 150) {
-      return res.status(400).json({ message: 'Age must be a valid number between 0 and 150' });
+    // Validate phone format - must be valid phone number
+    const phoneRegex = /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/;
+    if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
+      return res.status(400).json({ message: 'Invalid phone number format. Use format like: +966501234567 or (050) 123-4567' });
     }
 
     // Validate gender
@@ -72,14 +83,29 @@ export const createPatient = async (req, res) => {
       return res.status(400).json({ message: 'Gender must be Male, Female, or Other' });
     }
 
+    // Hash password (use provided password or default)
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash(password || 'default-password', 10);
+
+    // Create User first (required for Patient)
+    const user = await prisma.user.create({
+      data: {
+        email: email || `patient-${Date.now()}@alemad-clinic.com`,
+        password: hashedPassword,
+        name: fullName.trim(),
+        role: 'patient'
+      }
+    });
+
+    // Create Patient linked to User
     const patient = await prisma.patient.create({
       data: { 
-        fullName: fullName.trim(), 
         phone: phone.trim(), 
-        age: ageNum, 
         gender, 
-        medicalHistory: medicalHistory ? medicalHistory.trim() : null 
-      }
+        medicalHistory: medicalHistory ? medicalHistory.trim() : null,
+        user: { connect: { id: user.id } }
+      },
+      include: { user: true }
     });
 
     res.status(201).json({ message: 'Patient created successfully', patient });
@@ -91,21 +117,23 @@ export const createPatient = async (req, res) => {
 export const updatePatient = async (req, res) => {
   try {
     const { id } = req.params;
-    const { fullName, phone, age, gender, medicalHistory } = req.body;
+    const { fullName, phone, gender, medicalHistory } = req.body;
+
+    // Get the patient with user
+    const patient = await prisma.patient.findUnique({
+      where: { id: parseInt(id) },
+      include: { user: true }
+    });
+
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
 
     // Validate phone if provided
     if (phone) {
       const phoneRegex = /^[0-9+\-\s()]+$/;
       if (!phoneRegex.test(phone) || phone.length < 7) {
         return res.status(400).json({ message: 'Invalid phone number format' });
-      }
-    }
-
-    // Validate age if provided
-    if (age !== undefined) {
-      const ageNum = parseInt(age);
-      if (isNaN(ageNum) || ageNum < 0 || ageNum > 150) {
-        return res.status(400).json({ message: 'Age must be a valid number between 0 and 150' });
       }
     }
 
@@ -117,18 +145,27 @@ export const updatePatient = async (req, res) => {
       }
     }
 
-    const patient = await prisma.patient.update({
+    // Update patient fields
+    const updatedPatient = await prisma.patient.update({
       where: { id: parseInt(id) },
       data: {
-        ...(fullName && { fullName: fullName.trim() }),
         ...(phone && { phone: phone.trim() }),
-        ...(age !== undefined && { age: parseInt(age) }),
         ...(gender && { gender }),
         ...(medicalHistory !== undefined && { medicalHistory: medicalHistory ? medicalHistory.trim() : null })
-      }
+      },
+      include: { user: true }
     });
 
-    res.json({ message: 'Patient updated successfully', patient });
+    // Update user name if fullName is provided
+    if (fullName) {
+      await prisma.user.update({
+        where: { id: patient.userId },
+        data: { name: fullName.trim() }
+      });
+      updatedPatient.user.name = fullName.trim();
+    }
+
+    res.json({ message: 'Patient updated successfully', patient: updatedPatient });
   } catch (error) {
     res.status(500).json({ message: 'Error updating patient', error: error.message });
   }
@@ -229,25 +266,34 @@ export const loginPatient = async (req, res) => {
       return res.status(400).json({ message: 'Email and password required' });
     }
 
-    // Find patient
-    const patient = await prisma.patient.findUnique({
-      where: { email }
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    // Find user with role='patient' and matching email
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { patient: true }
     });
 
-    if (!patient) {
+    if (!user || user.role !== 'patient') {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
     // Check password
-    const passwordMatch = await bcrypt.compare(password, patient.password);
+    const bcrypt = require('bcryptjs');
+    const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
     // Generate JWT token
+    const jwt = require('jsonwebtoken');
     const token = jwt.sign(
-      { id: patient.id, email: patient.email, role: 'patient' },
-      process.env.JWT_SECRET,
+      { id: user.id, email: user.email, role: 'patient' },
+      process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '7d' }
     );
 
@@ -255,12 +301,11 @@ export const loginPatient = async (req, res) => {
       message: 'Login successful',
       token,
       patient: {
-        id: patient.id,
-        fullName: patient.fullName,
-        email: patient.email,
-        phone: patient.phone,
-        age: patient.age,
-        gender: patient.gender
+        id: user.id,
+        fullName: user.name,
+        email: user.email,
+        phone: user.patient?.phone,
+        gender: user.patient?.gender
       }
     });
   } catch (error) {

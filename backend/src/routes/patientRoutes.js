@@ -21,9 +21,9 @@ router.post('/login', loginPatient);
 router.get('/', getAllPatients);
 router.get('/:id', getPatientById);
 router.get('/:id/appointments', getPatientAppointments);
+router.post('/', createPatient);
 
 // Admin routes (protected)
-router.post('/', authenticateAdmin, createPatient);
 router.put('/:id', authenticateAdmin, updatePatient);
 router.delete('/:id', authenticateAdmin, deletePatient);
 

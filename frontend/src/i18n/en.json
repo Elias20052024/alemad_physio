@@ -199,5 +199,17 @@
     "primaryNumbers": "Phone",
     "landlineLabel": "Landline",
     "quickContactText": "Feel free to contact us for any questions or to schedule an appointment."
+  },
+  "tabs": {
+    "adult": "Adult Physiotherapy",
+    "pediatric": "Pediatric Therapy",
+    "intensive": "Intensive Program"
+  },
+  "sectionLabels": {
+    "treatmentMethods": "Treatment Methods:",
+    "conditionsTreated": "Conditions Treated:",
+    "therapyApproach": "Therapy Approach:",
+    "benefits": "Benefits:",
+    "sessionDuration": "Session Duration:"
   }
 }

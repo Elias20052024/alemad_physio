@@ -36,6 +36,7 @@ const Booking = () => {
 
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     phone: '',
     service: '',
     date: '',
@@ -84,7 +85,7 @@ const Booking = () => {
 
         setMessageType('success');
         setMessage(t('booking.success'));
-        setFormData({ name: '', phone: '', service: '', date: '', message: '' });
+        setFormData({ name: '', email: '', phone: '', service: '', date: '', message: '' });
       } else {
         setMessageType('error');
         setMessage(result.message || t('booking.error'));
@@ -150,6 +151,17 @@ const Booking = () => {
           size="small"
         />
 
+        <TextField
+          label="Email (Optional)"
+          name="email"
+          value={formData.email}
+          onChange={handleInputChange}
+          fullWidth
+          variant="outlined"
+          type="email"
+          size="small"
+        />
+
         <FormControl fullWidth required size="small">
           <InputLabel>{t('booking.service')}</InputLabel>
           <Select
@@ -207,17 +219,6 @@ const Booking = () => {
         </Button>
       </Box>
 
-      <Box sx={{ mt: 6, p: { xs: 2, sm: 3 }, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid #e0e0e0' }}>
-        <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-          📞 {t('contact.title') || 'Contact Us'}
-        </Typography>
-        <Typography variant="body2" paragraph sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-          {t('contact.title')}: <strong>{t('contact.phones')}</strong>
-        </Typography>
-        <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-          {t('contact.title')}: <strong>{t('contact.whatsapp')}</strong>
-        </Typography>
-      </Box>
       </Container>
     </Box>
   );

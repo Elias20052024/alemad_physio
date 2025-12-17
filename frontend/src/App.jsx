@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider as MUIThemeProvider } from '@mui/material/styles';
 import { CssBaseline, Box, Drawer, IconButton, useMediaQuery } from '@mui/material';
 import { useTheme as useMuiTheme } from '@mui/material/styles';
@@ -27,6 +27,7 @@ import AdminDashboard from './admin/AdminDashboard';
 import ManageTherapists from './admin/ManageTherapists';
 import ManagePatients from './admin/ManagePatients';
 import ManageAppointments from './admin/ManageAppointments';
+import ManageBookings from './admin/ManageBookings';
 
 // User Portal Pages
 import Login from './pages/Login';
@@ -197,6 +198,10 @@ const AppContent = () => {
         <Route
           path="/admin/appointments"
           element={<AdminProtectedRoute element={<AdminLayout><ManageAppointments /></AdminLayout>} />}
+        />
+        <Route
+          path="/admin/bookings"
+          element={<AdminProtectedRoute element={<AdminLayout><ManageBookings /></AdminLayout>} />}
         />
       </Routes>
     </MUIThemeProvider>

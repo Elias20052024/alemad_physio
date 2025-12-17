@@ -33,7 +33,6 @@ const ManagePatients = () => {
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
-    age: '',
     gender: '',
     medicalHistory: '',
   });
@@ -50,6 +49,8 @@ const ManagePatients = () => {
   const fetchPatients = async () => {
     try {
       const response = await patientService.getAllPatients();
+      console.log('📦 Raw API response:', response);
+      console.log('📊 Patients data:', response.data);
       setPatients(response.data);
     } catch (error) {
       console.error('Error fetching patients:', error);
@@ -62,9 +63,8 @@ const ManagePatients = () => {
     if (patient) {
       setEditingId(patient.id);
       setFormData({
-        fullName: patient.fullName,
+        fullName: patient.user?.name || '',
         phone: patient.phone,
-        age: patient.age,
         gender: patient.gender,
         medicalHistory: patient.medicalHistory || '',
       });
@@ -73,7 +73,6 @@ const ManagePatients = () => {
       setFormData({
         fullName: '',
         phone: '',
-        age: '',
         gender: '',
         medicalHistory: '',
       });
@@ -175,9 +174,9 @@ const ManagePatients = () => {
           <TableBody>
             {patients.map((patient) => (
               <TableRow key={patient.id} hover>
-                <TableCell>{patient.fullName}</TableCell>
+                <TableCell>{patient.user?.name || 'N/A'}</TableCell>
                 <TableCell>{patient.phone}</TableCell>
-                <TableCell>{patient.age}</TableCell>
+                <TableCell>{patient.age || 'N/A'}</TableCell>
                 <TableCell>{patient.gender}</TableCell>
                 <TableCell align="center">
                   <Tooltip title="Edit">
@@ -223,15 +222,6 @@ const ManagePatients = () => {
             label="Phone"
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            margin="normal"
-            required
-          />
-          <TextField
-            fullWidth
-            label="Age"
-            type="number"
-            value={formData.age}
-            onChange={(e) => setFormData({ ...formData, age: e.target.value })}
             margin="normal"
             required
           />

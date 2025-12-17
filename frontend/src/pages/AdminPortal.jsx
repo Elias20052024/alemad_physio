@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Box, Typography, Card, CardContent, Grid, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, MenuItem, IconButton, InputAdornment, Menu, Avatar, Select } from '@mui/material';
+import axios from 'axios';
+import { Container, Box, Typography, Card, CardContent, Grid, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, MenuItem, IconButton, InputAdornment, Menu, Avatar, Select, useTheme } from '@mui/material';
 import { LogoutSharp, Edit, Delete, Add as AddIcon, Visibility, VisibilityOff, MoreVert } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { therapistService, patientService } from '@services/apiService.js';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+
 const AdminPortal = () => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const token = localStorage.getItem('token');
   const adminName = localStorage.getItem('userName') || 'Admin';
   const [tabValue, setTabValue] = useState(0);
   const [profileMenuAnchor, setProfileMenuAnchor] = useState(null);
@@ -24,51 +29,45 @@ const AdminPortal = () => {
     newPassword: '',
     confirmPassword: ''
   });
-  const [therapists, setTherapists] = useState([
-    { id: 1, name: 'Dr. Ahmed Hassan', email: 'ahmed@email.com', specialty: 'Sports Medicine', status: 'active' },
-    { id: 2, name: 'Dr. Fatima Ali', email: 'fatima@email.com', specialty: 'Pediatric', status: 'active' },
-    { id: 3, name: 'Dr. Mohammad Karim', email: 'mohammad@email.com', specialty: 'Adult Therapy', status: 'inactive' }
-  ]);
+  const [therapists, setTherapists] = useState([]);
 
-  const [admins, setAdmins] = useState([
-    { id: 1, name: 'Admin User', email: 'admin@email.com', role: 'Super Admin', status: 'active' },
-    { id: 2, name: 'Manager', email: 'manager@email.com', role: 'Manager', status: 'active' }
-  ]);
+  const [admins, setAdmins] = useState([]);
 
-  const [patients, setPatients] = useState([
-    { id: 1, fullName: 'Patient 1', email: 'patient1@email.com', phone: '+962790000001', joinDate: '2024-10-15', status: 'active' },
-    { id: 2, fullName: 'Patient 2', email: 'patient2@email.com', phone: '+962790000002', joinDate: '2024-11-20', status: 'active' },
-    { id: 3, fullName: 'Patient 3', email: 'patient3@email.com', phone: '+962790000003', joinDate: '2024-12-01', status: 'inactive' }
-  ]);
+  const [patients, setPatients] = useState([]);
 
-  const [appointments, setAppointments] = useState(() => {
-    // Get admin-created appointments
-    const adminAppointments = [
-      { id: 1, patientName: 'Patient 1', therapistName: 'Dr. Ahmed Hassan', date: '2024-12-10', time: '10:00 AM', status: 'scheduled' },
-      { id: 2, patientName: 'Patient 2', therapistName: 'Dr. Fatima Ali', date: '2024-12-11', time: '02:00 PM', status: 'scheduled' },
-      { id: 3, patientName: 'Patient 3', therapistName: 'Dr. Mohammad Karim', date: '2024-12-12', time: '11:00 AM', status: 'completed' }
-    ];
-    
-    // Get patient-booked appointments from localStorage
-    const patientBookings = JSON.parse(localStorage.getItem('patientAppointments') || '[]');
-    
-    // Convert patient bookings to appointment format
-    const convertedBookings = patientBookings.map(booking => ({
-      id: booking.id,
-      patientName: booking.patientName,
-      therapistName: 'Not Assigned',
-      date: booking.date,
-      time: booking.time || '---',
-      service: booking.service,
-      phone: booking.phone,
-      message: booking.message,
-      status: booking.status || 'pending',
-      type: 'patient-booking'
-    }));
-    
-    // Combine and return all appointments
-    return [...adminAppointments, ...convertedBookings];
-  });
+  useEffect(() => {
+    const fetchAllData = async () => {
+      try {
+        // Fetch patients
+        const patientsResponse = await patientService.getAllPatients();
+        console.log('📊 Fetched patients from API:', patientsResponse.data);
+        setPatients(patientsResponse.data || []);
+
+        // Fetch therapists
+        const therapistsResponse = await therapistService.getAllTherapists();
+        console.log('👨‍⚕️ Fetched therapists from API:', therapistsResponse.data);
+        setTherapists(therapistsResponse.data || []);
+
+        // Fetch admins (using API call)
+        const adminsResponse = await axios.get(`${API_BASE_URL}/admin/list`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log('👤 Fetched admins from API:', adminsResponse.data);
+        setAdmins(adminsResponse.data || []);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setPatients([]);
+        setTherapists([]);
+        setAdmins([]);
+      }
+    };
+
+    if (token) {
+      fetchAllData();
+    }
+  }, [token]);
+
+  const [appointments, setAppointments] = useState([]);
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -126,7 +125,7 @@ const AdminPortal = () => {
     if (type === 'therapist') {
       setFormData({ name: '', specialty: '', email: '', phone: '', password: '' });
     } else if (type === 'patient') {
-      setFormData({ fullName: '', phone: '', email: '', password: '' });
+      setFormData({ fullName: '', phone: '', email: '', gender: '', password: '' });
     } else if (type === 'appointment') {
       setFormData({ patientName: '', therapistName: '', date: '', time: '' });
     } else if (type === 'admin') {
@@ -160,20 +159,42 @@ const AdminPortal = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     const { type, id } = deleteTarget;
-    if (type === 'therapist') {
-      setTherapists(therapists.filter(t => t.id !== id));
-      setSnackbar({ open: true, message: 'Therapist deleted successfully!', severity: 'success' });
-    } else if (type === 'patient') {
-      setPatients(patients.filter(p => p.id !== id));
-      setSnackbar({ open: true, message: 'Patient deleted successfully!', severity: 'success' });
-    } else if (type === 'appointment') {
-      setAppointments(appointments.filter(a => a.id !== id));
-      setSnackbar({ open: true, message: 'Appointment deleted successfully!', severity: 'success' });
-    } else if (type === 'admin') {
-      setAdmins(admins.filter(a => a.id !== id));
-      setSnackbar({ open: true, message: 'Admin deleted successfully!', severity: 'success' });
+    try {
+      if (type === 'therapist') {
+        await axios.delete(`${API_BASE_URL}/therapists/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setTherapists(therapists.filter(t => t.id !== id));
+        setSnackbar({ open: true, message: 'Therapist deleted successfully!', severity: 'success' });
+      } else if (type === 'patient') {
+        await axios.delete(`${API_BASE_URL}/patients/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setPatients(patients.filter(p => p.id !== id));
+        setSnackbar({ open: true, message: 'Patient deleted successfully!', severity: 'success' });
+      } else if (type === 'appointment') {
+        await axios.delete(`${API_BASE_URL}/appointments/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setAppointments(appointments.filter(a => a.id !== id));
+        setSnackbar({ open: true, message: 'Appointment deleted successfully!', severity: 'success' });
+      } else if (type === 'admin') {
+        await axios.delete(`${API_BASE_URL}/admins/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setAdmins(admins.filter(a => a.id !== id));
+        setSnackbar({ open: true, message: 'Admin deleted successfully!', severity: 'success' });
+      }
+    } catch (error) {
+      console.error('Error deleting:', error);
+      setSnackbar({ 
+        open: true, 
+        message: error.response?.data?.message || 'Error deleting item. Please try again.', 
+        severity: 'error' 
+      });
+      return;
     }
     setDeleteDialogOpen(false);
     setDeleteTarget({ type: '', id: null });
@@ -203,15 +224,68 @@ const AdminPortal = () => {
     handleProfileMenuClose();
   };
 
-  const handleSavePassword = () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert(language === 'ar' ? 'كلمات المرور غير متطابقة' : 'Passwords do not match');
-      return;
+  const handleSavePassword = async () => {
+    try {
+      // Validate passwords match
+      if (passwordData.newPassword !== passwordData.confirmPassword) {
+        setSnackbar({
+          open: true,
+          message: language === 'ar' ? 'كلمات المرور غير متطابقة' : 'Passwords do not match',
+          severity: 'error',
+        });
+        return;
+      }
+
+      // Validate new password length
+      if (passwordData.newPassword.length < 6) {
+        setSnackbar({
+          open: true,
+          message: language === 'ar' ? 'يجب أن تكون كلمة المرور 6 أحرف على الأقل' : 'Password must be at least 6 characters',
+          severity: 'error',
+        });
+        return;
+      }
+
+      // Get current user ID from token or localStorage
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        setSnackbar({
+          open: true,
+          message: language === 'ar' ? 'معرف المستخدم غير متوفر' : 'User ID not available',
+          severity: 'error',
+        });
+        return;
+      }
+
+      // Call backend API to change password
+      const response = await axios.put(
+        `${API_BASE_URL}/admin/${userId}/change-password`,
+        {
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+          confirmPassword: passwordData.confirmPassword
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setChangePasswordOpen(false);
+      setSnackbar({
+        open: true,
+        message: language === 'ar' ? 'تم تغيير كلمة المرور بنجاح' : 'Password changed successfully',
+        severity: 'success',
+      });
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || (language === 'ar' ? 'فشل تغيير كلمة المرور' : 'Failed to change password');
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
+      console.error('Password change error:', error);
     }
-    localStorage.setItem('userPassword', passwordData.newPassword);
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    setChangePasswordOpen(false);
-    alert(language === 'ar' ? 'تم تغيير كلمة المرور بنجاح' : 'Password changed successfully');
   };
 
   const handleCancelDelete = () => {
@@ -250,10 +324,23 @@ const AdminPortal = () => {
   const handleEditSubmit = async () => {
     try {
       if (dialogType === 'therapist') {
-        setTherapists(therapists.map(t => t.id === editingId ? { ...t, ...formData } : t));
+        const response = await axios.put(`${API_BASE_URL}/therapists/${editingId}`, formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setTherapists(therapists.map(t => t.id === editingId ? response.data : t));
         setSnackbar({ open: true, message: 'Therapist updated successfully!', severity: 'success' });
       } else if (dialogType === 'patient') {
-        setPatients(patients.map(p => p.id === editingId ? { ...p, ...formData } : p));
+        const patientData = {
+          fullName: formData.fullName,
+          phone: formData.phone,
+          gender: formData.gender,
+          email: formData.email,
+          password: formData.password
+        };
+        const response = await axios.put(`${API_BASE_URL}/patients/${editingId}`, patientData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setPatients(patients.map(p => p.id === editingId ? response.data : p));
         setSnackbar({ open: true, message: 'Patient updated successfully!', severity: 'success' });
       } else if (dialogType === 'appointment') {
         // Check for time conflict (excluding current appointment being edited)
@@ -280,28 +367,34 @@ const AdminPortal = () => {
             return;
           }
         }
-        setAppointments(appointments.map(a => a.id === editingId ? { ...a, ...formData } : a));
+        const response = await axios.put(`${API_BASE_URL}/appointments/${editingId}`, formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setAppointments(appointments.map(a => a.id === editingId ? response.data : a));
         setSnackbar({ open: true, message: 'Appointment updated successfully!', severity: 'success' });
       } else if (dialogType === 'admin') {
-        setAdmins(admins.map(a => a.id === editingId ? { ...a, ...formData } : a));
+        const response = await axios.put(`${API_BASE_URL}/admin/${editingId}`, formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setAdmins(admins.map(a => a.id === editingId ? response.data : a));
         setSnackbar({ open: true, message: 'Admin updated successfully!', severity: 'success' });
       }
       handleCloseEditDialog();
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'An error occurred. Please try again.';
       setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+      console.error('Error updating item:', error);
     }
   };
 
   const handleAddSubmit = async () => {
     try {
       if (dialogType === 'therapist') {
-        // Add therapist to local state
-        const newTherapist = {
-          id: therapists.length + 1,
-          ...formData,
-          status: 'active'
-        };
+        // Add therapist via API
+        const response = await axios.post(`${API_BASE_URL}/therapists`, formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const newTherapist = response.data;
         setTherapists([...therapists, newTherapist]);
         setSnackbar({
           open: true,
@@ -309,15 +402,18 @@ const AdminPortal = () => {
           severity: 'success',
         });
       } else if (dialogType === 'patient') {
-        // Add patient to local state
-        const newPatient = {
-          id: patients.length + 1,
+        // Add patient via API
+        const patientData = {
           fullName: formData.fullName,
-          email: formData.email,
           phone: formData.phone,
-          joinDate: new Date().toISOString().split('T')[0],
-          status: 'active'
+          gender: formData.gender,
+          email: formData.email,
+          password: formData.password
         };
+        const response = await axios.post(`${API_BASE_URL}/patients`, patientData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const newPatient = response.data.patient || response.data;
         setPatients([...patients, newPatient]);
         setSnackbar({
           open: true,
@@ -350,15 +446,11 @@ const AdminPortal = () => {
           }
         }
 
-        // Add appointment to local state
-        const newAppointment = {
-          id: appointments.length + 1,
-          patientName: formData.patientName,
-          therapistName: formData.therapistName,
-          date: formData.date,
-          time: formData.time,
-          status: 'scheduled'
-        };
+        // Add appointment via API
+        const response = await axios.post(`${API_BASE_URL}/appointments`, formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const newAppointment = response.data;
         setAppointments([...appointments, newAppointment]);
         setSnackbar({
           open: true,
@@ -366,14 +458,11 @@ const AdminPortal = () => {
           severity: 'success',
         });
       } else if (dialogType === 'admin') {
-        // Add admin to local state
-        const newAdmin = {
-          id: admins.length + 1,
-          name: formData.name,
-          email: formData.email,
-          role: formData.role || 'Manager',
-          status: 'active'
-        };
+        // Add admin via API
+        const response = await axios.post(`${API_BASE_URL}/admin/register`, formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const newAdmin = response.data;
         setAdmins([...admins, newAdmin]);
         setSnackbar({
           open: true,
@@ -389,6 +478,7 @@ const AdminPortal = () => {
         message: errorMessage,
         severity: 'error',
       });
+      console.error('Error adding item:', error);
     }
   };
 
@@ -399,24 +489,33 @@ const AdminPortal = () => {
     navigate('/login');
   };
 
-  const handleStatusChange = (type, id, newStatus) => {
+  const handleStatusChange = async (type, id, newStatus) => {
     try {
       if (type === 'therapist') {
-        setTherapists(therapists.map(t => t.id === id ? { ...t, status: newStatus } : t));
+        const response = await axios.put(`${API_BASE_URL}/therapists/${id}`, { status: newStatus }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setTherapists(therapists.map(t => t.id === id ? response.data : t));
         setSnackbar({
           open: true,
           message: `Therapist status changed to ${newStatus}!`,
           severity: 'success',
         });
       } else if (type === 'patient') {
-        setPatients(patients.map(p => p.id === id ? { ...p, status: newStatus } : p));
+        const response = await axios.put(`${API_BASE_URL}/patients/${id}`, { status: newStatus }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setPatients(patients.map(p => p.id === id ? response.data : p));
         setSnackbar({
           open: true,
           message: `Patient status changed to ${newStatus}!`,
           severity: 'success',
         });
       } else if (type === 'admin') {
-        setAdmins(admins.map(a => a.id === id ? { ...a, status: newStatus } : a));
+        const response = await axios.put(`${API_BASE_URL}/admins/${id}`, { status: newStatus }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setAdmins(admins.map(a => a.id === id ? response.data : a));
         setSnackbar({
           open: true,
           message: `Admin status changed to ${newStatus}!`,
@@ -429,6 +528,7 @@ const AdminPortal = () => {
         message: 'Failed to update status',
         severity: 'error',
       });
+      console.error('Error updating status:', error);
     }
   };
 
@@ -605,40 +705,49 @@ const AdminPortal = () => {
 
       {/* Patients Table */}
       {tabValue === 0 && (
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} sx={{ 
+          backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5', 
+          borderRadius: '10px', 
+          marginTop: 3 
+        }}>
           <Table>
             <TableHead>
               <TableRow sx={{ bgcolor: '#1C6FB5' }}>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'الاسم' : 'Name'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'الهاتف' : 'Phone'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'تاريخ الانضمام' : 'Join Date'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'الحالة' : 'Status'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'الإجراءات' : 'Actions'}
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {patients.map((patient) => (
-                <TableRow key={patient.id} hover>
-                  <TableCell>{patient.fullName}</TableCell>
-                  <TableCell>{patient.email}</TableCell>
-                  <TableCell>{patient.phone}</TableCell>
-                  <TableCell>{patient.joinDate}</TableCell>
+              {patients.map((patient, index) => (
+                <TableRow key={patient.id} hover sx={{ 
+                  backgroundColor: theme.palette.mode === 'dark' 
+                    ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
+                    : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'), 
+                  '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' } 
+                }}>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{patient.user?.name || 'N/A'}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{patient.user?.email || 'N/A'}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{patient.phone || 'N/A'}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{patient.createdAt ? new Date(patient.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
                   <TableCell>
                     <Select
-                      value={patient.status}
+                      value={patient.status || 'active'}
                       onChange={(e) => handleStatusChange('patient', patient.id, e.target.value)}
                       size="small"
                       sx={{ minWidth: 100 }}
@@ -664,33 +773,42 @@ const AdminPortal = () => {
 
       {/* Therapists Table */}
       {tabValue === 1 && (
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} sx={{ 
+          backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5', 
+          borderRadius: '10px', 
+          marginTop: 3 
+        }}>
           <Table>
             <TableHead>
               <TableRow sx={{ bgcolor: '#1C6FB5' }}>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'الاسم' : 'Name'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'التخصص' : 'Specialization'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'الحالة' : 'Status'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'الإجراءات' : 'Actions'}
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {therapists.map((therapist) => (
-                <TableRow key={therapist.id} hover>
-                  <TableCell>{therapist.name}</TableCell>
-                  <TableCell>{therapist.email}</TableCell>
-                  <TableCell>{therapist.specialty}</TableCell>
+              {therapists.map((therapist, index) => (
+                <TableRow key={therapist.id} hover sx={{ 
+                  backgroundColor: theme.palette.mode === 'dark' 
+                    ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
+                    : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'), 
+                  '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' } 
+                }}>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.name}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.email}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.specialty}</TableCell>
                   <TableCell>
                     <Select
                       value={therapist.status}
@@ -719,37 +837,46 @@ const AdminPortal = () => {
 
       {/* Appointments Table */}
       {tabValue === 2 && (
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} sx={{ 
+          backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5', 
+          borderRadius: '10px', 
+          marginTop: 3 
+        }}>
           <Table>
             <TableHead>
               <TableRow sx={{ bgcolor: '#1C6FB5' }}>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'اسم المريض' : 'Patient Name'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'اسم المعالج' : 'Therapist Name'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'التاريخ' : 'Date'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'الوقت' : 'Time'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'الحالة' : 'Status'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'الإجراءات' : 'Actions'}
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {appointments.map((appointment) => (
-                <TableRow key={appointment.id} hover>
-                  <TableCell>{appointment.patientName}</TableCell>
-                  <TableCell>{appointment.therapistName}</TableCell>
-                  <TableCell>{appointment.date}</TableCell>
-                  <TableCell>{appointment.time}</TableCell>
+              {appointments.map((appointment, index) => (
+                <TableRow key={appointment.id} hover sx={{ 
+                  backgroundColor: theme.palette.mode === 'dark' 
+                    ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
+                    : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'), 
+                  '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' } 
+                }}>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{appointment.patientName}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{appointment.therapistName}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{appointment.date}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{appointment.time}</TableCell>
                   <TableCell>
                     <Chip 
                       label={appointment.status} 
@@ -777,33 +904,42 @@ const AdminPortal = () => {
 
       {/* Admins Table */}
       {tabValue === 3 && (
-        <TableContainer component={Paper} sx={{ backgroundColor: '#f5f5f5', borderRadius: '10px', marginTop: 3 }}>
+        <TableContainer component={Paper} sx={{ 
+          backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5', 
+          borderRadius: '10px', 
+          marginTop: 3 
+        }}>
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: '#1C6FB5' }}>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'الاسم' : 'Name'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'الدور' : 'Role'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'الحالة' : 'Status'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'الإجراءات' : 'Actions'}
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {admins.map((admin) => (
-                <TableRow key={admin.id} hover>
-                  <TableCell>{admin.name}</TableCell>
-                  <TableCell>{admin.email}</TableCell>
-                  <TableCell>{admin.role}</TableCell>
+              {admins.map((admin, index) => (
+                <TableRow key={admin.id} hover sx={{ 
+                  backgroundColor: theme.palette.mode === 'dark' 
+                    ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
+                    : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'), 
+                  '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' } 
+                }}>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{admin.name}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{admin.email}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{admin.role}</TableCell>
                   <TableCell>
                     <Select
                       value={admin.status}
@@ -928,6 +1064,19 @@ const AdminPortal = () => {
                 margin="normal"
                 required
               />
+              <TextField
+                fullWidth
+                select
+                label={language === 'ar' ? 'الجنس' : 'Gender'}
+                value={formData.gender || ''}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                margin="normal"
+                required
+              >
+                <MenuItem value="Male">{language === 'ar' ? 'ذكر' : 'Male'}</MenuItem>
+                <MenuItem value="Female">{language === 'ar' ? 'أنثى' : 'Female'}</MenuItem>
+                <MenuItem value="Other">{language === 'ar' ? 'آخر' : 'Other'}</MenuItem>
+              </TextField>
               <TextField
                 fullWidth
                 label={language === 'ar' ? 'كلمة المرور' : 'Password'}
@@ -1170,6 +1319,19 @@ const AdminPortal = () => {
               />
               <TextField
                 fullWidth
+                select
+                label={language === 'ar' ? 'الجنس' : 'Gender'}
+                value={formData.gender || ''}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                margin="normal"
+                required
+              >
+                <MenuItem value="Male">{language === 'ar' ? 'ذكر' : 'Male'}</MenuItem>
+                <MenuItem value="Female">{language === 'ar' ? 'أنثى' : 'Female'}</MenuItem>
+                <MenuItem value="Other">{language === 'ar' ? 'آخر' : 'Other'}</MenuItem>
+              </TextField>
+              <TextField
+                fullWidth
                 label={language === 'ar' ? 'كلمة المرور' : 'Password'}
                 type={showEditPassword ? 'text' : 'password'}
                 value={formData.password || ''}
@@ -1208,40 +1370,6 @@ const AdminPortal = () => {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 margin="normal"
                 required
-              />
-              <TextField
-                fullWidth
-                select
-                label={language === 'ar' ? 'الدور' : 'Role'}
-                value={formData.role || 'Manager'}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                margin="normal"
-                required
-              >
-                <MenuItem value="Super Admin">{language === 'ar' ? 'مدير عام' : 'Super Admin'}</MenuItem>
-                <MenuItem value="Manager">{language === 'ar' ? 'مدير' : 'Manager'}</MenuItem>
-                <MenuItem value="User">{language === 'ar' ? 'مستخدم' : 'User'}</MenuItem>
-              </TextField>
-              <TextField
-                fullWidth
-                label={language === 'ar' ? 'كلمة المرور' : 'Password'}
-                type={showEditPassword ? 'text' : 'password'}
-                value={formData.password || ''}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                margin="normal"
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle password visibility"
-                        onClick={() => setShowEditPassword(!showEditPassword)}
-                        edge="end"
-                      >
-                        {showEditPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
               />
             </>
           ) : (
@@ -1310,34 +1438,117 @@ const AdminPortal = () => {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={handleCancelDelete} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ bgcolor: '#ff5252', color: 'white', fontWeight: 'bold', textAlign: 'center' }}>
-          {language === 'ar' ? '⚠️ تأكيد الحذف' : '⚠️ Confirm Delete'}
+      <Dialog 
+        open={deleteDialogOpen} 
+        onClose={handleCancelDelete} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          bgcolor: 'linear-gradient(135deg, #ff5252 0%, #ff1744 100%)', 
+          color: 'white', 
+          fontWeight: 'bold', 
+          textAlign: 'center',
+          padding: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 1,
+          fontSize: '1.3rem'
+        }}>
+          <span style={{ fontSize: '1.5rem' }}>🚨</span>
+          {language === 'ar' ? 'تأكيد الحذف' : 'Confirm Delete'}
         </DialogTitle>
-        <DialogContent sx={{ pt: 3, pb: 3, textAlign: 'center' }}>
-          <Typography variant="body1" sx={{ mb: 2, color: '#333' }}>
+        <DialogContent sx={{ 
+          pt: 4, 
+          pb: 3, 
+          textAlign: 'center',
+          backgroundColor: '#fafafa'
+        }}>
+          <Box sx={{ mb: 3 }}>
+            <Box sx={{
+              width: '80px',
+              height: '80px',
+              margin: '0 auto 20px',
+              backgroundColor: '#ffebee',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '40px',
+              border: '2px solid #ff5252'
+            }}>
+              🗑️
+            </Box>
+          </Box>
+          <Typography variant="h6" sx={{ mb: 2, color: '#1a1a1a', fontWeight: 600 }}>
             {language === 'ar' 
-              ? 'هل أنت متأكد من أنك تريد حذف هذا العنصر؟ لا يمكن التراجع عن هذا الإجراء.'
-              : 'Are you sure you want to delete this item? This action cannot be undone.'
+              ? 'هل أنت متأكد من الحذف؟'
+              : 'Are you sure?'
             }
           </Typography>
-          <Typography variant="caption" sx={{ color: '#666' }}>
-            {language === 'ar' ? 'سيتم حذف البيانات بشكل نهائي' : 'This will permanently delete the data'}
+          <Typography variant="body2" sx={{ mb: 3, color: '#555', lineHeight: 1.6 }}>
+            {language === 'ar' 
+              ? 'سيتم حذف هذا العنصر نهائياً. هذا الإجراء لا يمكن التراجع عنه.'
+              : 'This item will be permanently deleted. This action cannot be undone.'
+            }
           </Typography>
+          <Box sx={{
+            backgroundColor: '#fff3cd',
+            border: '1px solid #ffc107',
+            borderRadius: '8px',
+            padding: '12px',
+            mt: 2
+          }}>
+            <Typography variant="caption" sx={{ color: '#856404', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+              <span>⚠️</span>
+              {language === 'ar' ? 'لا يمكن استعادة البيانات المحذوفة' : 'Deleted data cannot be recovered'}
+            </Typography>
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2, justifyContent: 'center', gap: 2 }}>
+        <DialogActions sx={{ 
+          p: 3, 
+          justifyContent: 'center', 
+          gap: 2,
+          backgroundColor: '#f5f5f5',
+          borderTop: '1px solid #e0e0e0'
+        }}>
           <Button 
             onClick={handleCancelDelete} 
             variant="outlined"
-            sx={{ minWidth: '120px' }}
+            sx={{ 
+              minWidth: '140px',
+              borderColor: '#1C6FB5',
+              color: '#1C6FB5',
+              fontWeight: 600,
+              '&:hover': {
+                backgroundColor: '#e3f2fd',
+                borderColor: '#1C6FB5'
+              }
+            }}
           >
             {language === 'ar' ? 'إلغاء' : 'Cancel'}
           </Button>
           <Button 
             onClick={handleConfirmDelete} 
             variant="contained" 
-            color="error"
-            sx={{ minWidth: '120px' }}
+            sx={{ 
+              minWidth: '140px',
+              background: 'linear-gradient(135deg, #ff5252 0%, #ff1744 100%)',
+              fontWeight: 600,
+              '&:hover': {
+                background: 'linear-gradient(135deg, #ff3838 0%, #d32f2f 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 16px rgba(255, 82, 82, 0.4)'
+              },
+              transition: 'all 0.3s ease'
+            }}
           >
             {language === 'ar' ? 'حذف' : 'Delete'}
           </Button>

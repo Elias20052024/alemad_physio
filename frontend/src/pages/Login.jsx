@@ -7,6 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 import DarkModeToggle from '../components/DarkModeToggle';
 import ModernLoginButton from '../components/ModernLoginButton';
 import { patientAPI } from '../services/api';
+import { adminService } from '../services/apiService';
 
 const Login = () => {
   const { t, language } = useLanguage();
@@ -165,8 +166,8 @@ const Login = () => {
         };
         const role = roleMap[tabValue];
 
-        // Mock validation for non-patient roles
-        if (!name || !email || !password) {
+        // Validation for admin/therapist login
+        if (!email || !password) {
           setError(language === 'ar' ? 'يرجى ملء جميع الحقول' : 'Please fill all fields');
           setLoading(false);
           return;
@@ -178,17 +179,41 @@ const Login = () => {
           return;
         }
 
-        // Store user info in localStorage
-        localStorage.setItem('userRole', role);
-        localStorage.setItem('userName', name);
-        localStorage.setItem('userEmail', email);
-        localStorage.setItem('isLoggedIn', 'true');
+        // Call API for admin/therapist login
+        try {
+          if (role === 'admin') {
+            const { data } = await adminService.login(email, password);
+            
+            // Store token and admin info
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('userId', data.admin?.id || '');
+            localStorage.setItem('userRole', 'admin');
+            localStorage.setItem('userName', data.admin?.name || email);
+            localStorage.setItem('userEmail', data.admin?.email || email);
+            localStorage.setItem('isLoggedIn', 'true');
 
-        // Redirect based on role
-        if (role === 'therapist') {
-          navigate('/therapist-portal');
-        } else if (role === 'admin') {
-          navigate('/admin-portal');
+            setError('');
+            setLoading(false);
+            navigate('/admin-portal');
+            return;
+          } else if (role === 'therapist') {
+            // Therapist login - implement similar to admin
+            const { data } = await patientAPI.login(email, password);
+            
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('userRole', 'therapist');
+            localStorage.setItem('userName', data.therapist?.name || email);
+            localStorage.setItem('userEmail', data.therapist?.email || email);
+            localStorage.setItem('isLoggedIn', 'true');
+
+            setError('');
+            setLoading(false);
+            navigate('/therapist-portal');
+            return;
+          }
+        } catch (error) {
+          setError(error.response?.data?.message || (language === 'ar' ? 'فشل تسجيل الدخول' : 'Login failed'));
+          setLoading(false);
         }
       }
     } catch (err) {
