@@ -7,6 +7,7 @@ export const adminService = {
 };
 
 export const therapistService = {
+  login: (email, password) => apiClient.post('/therapists/login', { email, password }),
   getAllTherapists: () => apiClient.get('/therapists'),
   getTherapistById: (id) => apiClient.get(`/therapists/${id}`),
   createTherapist: (data) => apiClient.post('/therapists', data),

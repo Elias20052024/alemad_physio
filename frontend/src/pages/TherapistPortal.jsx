@@ -1,19 +1,25 @@
-import React, { useState } from 'react';
-import { Container, Box, Typography, Card, CardContent, Button, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Tabs, Tab, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, TextField, InputAdornment, IconButton, Avatar } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Container, Box, Typography, Card, CardContent, Button, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Tabs, Tab, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, TextField, InputAdornment, IconButton, Avatar, CircularProgress } from '@mui/material';
 import { LogoutSharp, MoreVert, Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import apiClient from '../services/api';
 
 const TherapistPortal = () => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const therapistName = localStorage.getItem('userName') || 'Therapist';
+  const therapistId = localStorage.getItem('userId');
   const [tabValue, setTabValue] = useState(0);
   const [profileMenuAnchor, setProfileMenuAnchor] = useState(null);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [viewDetailsOpen, setViewDetailsOpen] = useState(false);
   const [profileData, setProfileData] = useState({
     name: localStorage.getItem('userName') || 'Therapist',
     email: localStorage.getItem('userEmail') || '',
@@ -23,32 +29,28 @@ const TherapistPortal = () => {
     newPassword: '',
     confirmPassword: ''
   });
-  const [appointments, setAppointments] = useState([
-    {
-      id: 1,
-      patientName: 'Ahmed Hassan',
-      date: '2025-01-15',
-      time: '10:00 AM',
-      service: 'Adult Physiotherapy',
-      status: 'confirmed'
-    },
-    {
-      id: 2,
-      patientName: 'Fatima Ali',
-      date: '2025-01-16',
-      time: '2:30 PM',
-      service: 'Pediatric Therapy',
-      status: 'pending'
-    },
-    {
-      id: 3,
-      patientName: 'Mohammad Karim',
-      date: '2025-01-17',
-      time: '11:00 AM',
-      service: 'Sports Medicine',
-      status: 'confirmed'
+
+  // Fetch appointments on component mount
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        setLoading(true);
+        console.log('Fetching appointments for therapist:', therapistId);
+        const response = await apiClient.get(`/appointments?therapistId=${therapistId}`);
+        console.log('Appointments fetched:', response.data);
+        setAppointments(response.data || []);
+      } catch (error) {
+        console.error('Error fetching appointments:', error);
+        setAppointments([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (therapistId) {
+      fetchAppointments();
     }
-  ]);
+  }, [therapistId]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -57,23 +59,54 @@ const TherapistPortal = () => {
   const handleLogout = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userName');
     localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('token');
     navigate('/login');
   };
 
   const getStatusColor = (status) => {
     switch(status) {
-      case 'confirmed': return 'success';
+      case 'confirmed': 
+      case 'scheduled': return 'success';
       case 'pending': return 'warning';
       case 'completed': return 'primary';
+      case 'cancelled': return 'error';
       default: return 'default';
     }
   };
 
-  const handleCompleteAppointment = (appointmentId) => {
-    setAppointments(appointments.map(apt => 
-      apt.id === appointmentId ? { ...apt, status: 'completed' } : apt
-    ));
+  const getStatusLabel = (status) => {
+    const statusMap = {
+      'confirmed': language === 'ar' ? 'مؤكد' : 'Confirmed',
+      'scheduled': language === 'ar' ? 'مجدول' : 'Scheduled',
+      'pending': language === 'ar' ? 'قيد الانتظار' : 'Pending',
+      'completed': language === 'ar' ? 'مكتمل' : 'Completed',
+      'cancelled': language === 'ar' ? 'ملغى' : 'Cancelled'
+    };
+    return statusMap[status] || status;
+  };
+
+  const handleCompleteAppointment = async (appointmentId) => {
+    try {
+      await apiClient.put(`/appointments/${appointmentId}`, { status: 'completed' });
+      setAppointments(appointments.map(apt => 
+        apt.id === appointmentId ? { ...apt, status: 'completed' } : apt
+      ));
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+    }
+  };
+
+  const handleViewDetails = (appointment) => {
+    setSelectedAppointment(appointment);
+    setViewDetailsOpen(true);
+  };
+
+  const handleCloseDetails = () => {
+    setViewDetailsOpen(false);
+    setSelectedAppointment(null);
   };
 
   const handleProfileMenuOpen = (event) => {
@@ -110,6 +143,23 @@ const TherapistPortal = () => {
     setChangePasswordOpen(false);
     alert(language === 'ar' ? 'تم تغيير كلمة المرور بنجاح' : 'Password changed successfully');
   };
+
+  // Filter appointments based on tab
+  const filteredAppointments = appointments.filter(apt => {
+    if (tabValue === 0) return true; // All appointments
+    if (tabValue === 1) return apt.status === 'pending'; // Pending only
+    return true;
+  });
+
+  // Calculate stats
+  const todayAppointments = appointments.filter(apt => {
+    const today = new Date().toISOString().split('T')[0];
+    return apt.appointmentDate === today;
+  }).length;
+
+  const pendingAppointments = appointments.filter(apt => apt.status === 'pending').length;
+  const uniquePatients = new Set(appointments.map(apt => apt.patientId)).size;
+  const completedAppointments = appointments.filter(apt => apt.status === 'completed').length;
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 3, md: 6 } }}>
@@ -185,7 +235,7 @@ const TherapistPortal = () => {
                 {language === 'ar' ? 'المواعيد اليوم' : 'Today Appointments'}
               </Typography>
               <Typography variant="h4" sx={{ color: '#4caf50' }}>
-                3
+                {todayAppointments}
               </Typography>
             </CardContent>
           </Card>
@@ -197,7 +247,7 @@ const TherapistPortal = () => {
                 {language === 'ar' ? 'المواعيد المعلقة' : 'Pending Appointments'}
               </Typography>
               <Typography variant="h4" sx={{ color: '#2196f3' }}>
-                2
+                {pendingAppointments}
               </Typography>
             </CardContent>
           </Card>
@@ -209,7 +259,7 @@ const TherapistPortal = () => {
                 {language === 'ar' ? 'المرضى' : 'Total Patients'}
               </Typography>
               <Typography variant="h4" sx={{ color: '#ff9800' }}>
-                15
+                {uniquePatients}
               </Typography>
             </CardContent>
           </Card>
@@ -221,7 +271,7 @@ const TherapistPortal = () => {
                 {language === 'ar' ? 'المواعيد المكتملة' : 'Completed'}
               </Typography>
               <Typography variant="h4" sx={{ color: '#9c27b0' }}>
-                28
+                {completedAppointments}
               </Typography>
             </CardContent>
           </Card>
@@ -238,68 +288,75 @@ const TherapistPortal = () => {
       </Card>
 
       {/* Appointments Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: '#1C6FB5' }}>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
-                {language === 'ar' ? 'المريض' : 'Patient'}
-              </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
-                {language === 'ar' ? 'التاريخ' : 'Date'}
-              </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
-                {language === 'ar' ? 'الوقت' : 'Time'}
-              </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
-                {language === 'ar' ? 'الخدمة' : 'Service'}
-              </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
-                {language === 'ar' ? 'الحالة' : 'Status'}
-              </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
-                {language === 'ar' ? 'الإجراءات' : 'Actions'}
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {appointments.map((appointment) => (
-              <TableRow key={appointment.id} hover>
-                <TableCell>{appointment.patientName}</TableCell>
-                <TableCell>{appointment.date}</TableCell>
-                <TableCell>{appointment.time}</TableCell>
-                <TableCell>{appointment.service}</TableCell>
-                <TableCell>
-                  <Chip 
-                    label={appointment.status} 
-                    color={getStatusColor(appointment.status)}
-                    size="small"
-                  />
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: '#1C6FB5' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                  {language === 'ar' ? 'المريض' : 'Patient'}
                 </TableCell>
-                <TableCell>
-                  <Button 
-                    size="small" 
-                    variant="outlined"
-                    sx={{ mr: 1, color: '#1C6FB5', borderColor: '#1C6FB5' }}
-                  >
-                    {language === 'ar' ? 'عرض' : 'View'}
-                  </Button>
-                  {appointment.status !== 'completed' && (
-                    <Button 
-                      size="small" 
-                      variant="contained"
-                      sx={{ bgcolor: '#4caf50', '&:hover': { bgcolor: '#45a049' } }}
-                      onClick={() => handleCompleteAppointment(appointment.id)}
-                    >
-                      {language === 'ar' ? 'إنهاء' : 'Complete'}
-                    </Button>
-                  )}
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                  {language === 'ar' ? 'التاريخ' : 'Date'}
+                </TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                  {language === 'ar' ? 'الوقت' : 'Time'}
+                </TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                  {language === 'ar' ? 'الحالة' : 'Status'}
+                </TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                  {language === 'ar' ? 'الإجراءات' : 'Actions'}
                 </TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {filteredAppointments.length > 0 ? (
+                filteredAppointments.map((appointment) => {
+                  const patientName = appointment.patient?.user?.name || appointment.patient?.fullName || 'Unknown Patient';
+                  const appointmentDate = new Date(appointment.appointmentDate);
+                  return (
+                    <TableRow key={appointment.id} hover>
+                      <TableCell>{patientName}</TableCell>
+                      <TableCell>{appointmentDate.toLocaleDateString()}</TableCell>
+                      <TableCell>{appointment.startTime}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={getStatusLabel(appointment.status)} 
+                          color={getStatusColor(appointment.status)}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
+                          <Button 
+                            size="small" 
+                            variant="contained"
+                            sx={{ bgcolor: '#4caf50', '&:hover': { bgcolor: '#45a049' } }}
+                            onClick={() => handleCompleteAppointment(appointment.id)}
+                          >
+                            {language === 'ar' ? 'إنهاء' : 'Complete'}
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} sx={{ textAlign: 'center', py: 3 }}>
+                    {language === 'ar' ? 'لا توجد مواعيد' : 'No appointments'}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       {/* Edit Profile Dialog */}
       <Dialog open={editProfileOpen} onClose={() => setEditProfileOpen(false)} maxWidth="sm" fullWidth>
@@ -394,6 +451,76 @@ const TherapistPortal = () => {
           </Button>
           <Button onClick={handleSavePassword} variant="contained">
             {language === 'ar' ? 'تغيير' : 'Change'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Appointment Details Dialog */}
+      <Dialog open={viewDetailsOpen} onClose={handleCloseDetails} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {language === 'ar' ? 'تفاصيل الموعد' : 'Appointment Details'}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          {selectedAppointment && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1C6FB5' }}>
+                  {language === 'ar' ? 'المريض' : 'Patient'}
+                </Typography>
+                <Typography>{selectedAppointment.patient?.user?.name || 'N/A'}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1C6FB5' }}>
+                  {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
+                </Typography>
+                <Typography>{selectedAppointment.patient?.user?.email || 'N/A'}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1C6FB5' }}>
+                  {language === 'ar' ? 'الهاتف' : 'Phone'}
+                </Typography>
+                <Typography>{selectedAppointment.patient?.phone || 'N/A'}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1C6FB5' }}>
+                  {language === 'ar' ? 'التاريخ' : 'Date'}
+                </Typography>
+                <Typography>{new Date(selectedAppointment.appointmentDate).toLocaleDateString()}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1C6FB5' }}>
+                  {language === 'ar' ? 'الوقت' : 'Time'}
+                </Typography>
+                <Typography>{selectedAppointment.startTime}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1C6FB5' }}>
+                  {language === 'ar' ? 'الخدمة' : 'Service'}
+                </Typography>
+                <Typography>{selectedAppointment.service || 'General'}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1C6FB5' }}>
+                  {language === 'ar' ? 'الحالة' : 'Status'}
+                </Typography>
+                <Chip 
+                  label={getStatusLabel(selectedAppointment.status)} 
+                  color={getStatusColor(selectedAppointment.status)}
+                  size="small"
+                />
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1C6FB5' }}>
+                  {language === 'ar' ? 'الملاحظات' : 'Notes'}
+                </Typography>
+                <Typography>{selectedAppointment.notes || 'No notes'}</Typography>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDetails}>
+            {language === 'ar' ? 'إغلاق' : 'Close'}
           </Button>
         </DialogActions>
       </Dialog>

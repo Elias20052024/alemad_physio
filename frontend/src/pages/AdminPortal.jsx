@@ -45,14 +45,14 @@ const formatDateForDisplay = (dateString) => {
 
 // Specialty options for therapists
 const specialtyOptions = [
-  { value: 'Physical Therapy', label: 'Physical Therapy' },
-  { value: 'Occupational Therapy', label: 'Occupational Therapy' },
-  { value: 'Speech Therapy', label: 'Speech Therapy' },
-  { value: 'Orthopedic Rehabilitation', label: 'Orthopedic Rehabilitation' },
-  { value: 'Pediatric Physical Therapy', label: 'Pediatric Physical Therapy' },
-  { value: 'Neuromuscular Therapy', label: 'Neuromuscular Therapy' },
-  { value: 'Sports Medicine', label: 'Sports Medicine' },
-  { value: 'Cardiopulmonary Rehabilitation', label: 'Cardiopulmonary Rehabilitation' }
+  { value: 'Physical Therapy', label: 'العلاج الطبيعي', labelEn: 'Physical Therapy' },
+  { value: 'Occupational Therapy', label: 'العلاج الوظيفي', labelEn: 'Occupational Therapy' },
+  { value: 'Speech Therapy', label: 'علاج النطق', labelEn: 'Speech Therapy' },
+  { value: 'Orthopedic Rehabilitation', label: 'إعادة التأهيل العظمية', labelEn: 'Orthopedic Rehabilitation' },
+  { value: 'Pediatric Physical Therapy', label: 'العلاج الطبيعي للأطفال', labelEn: 'Pediatric Physical Therapy' },
+  { value: 'Neuromuscular Therapy', label: 'العلاج العصبي العضلي', labelEn: 'Neuromuscular Therapy' },
+  { value: 'Sports Medicine', label: 'طب الرياضة', labelEn: 'Sports Medicine' },
+  { value: 'Cardiopulmonary Rehabilitation', label: 'إعادة التأهيل القلبية الرئوية', labelEn: 'Cardiopulmonary Rehabilitation' }
 ];
 
 const AdminPortal = () => {
@@ -75,7 +75,7 @@ const AdminPortal = () => {
       case 'scheduled':
         return '#4caf50'; // Green
       case 'cancelled':
-        return '#9c27b0'; // Purple
+        return '#f44336'; // Red
       default:
         return '#9e9e9e'; // Grey
     }
@@ -765,7 +765,7 @@ const AdminPortal = () => {
         </Box>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           {/* Profile Card */}
-          <Card sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, minWidth: '200px', bgcolor: '#f5f5f5', borderRadius: '10px' }}>
+          <Card sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, minWidth: '200px', bgcolor: '#f5f5f5', borderRadius: '10px', display: { xs: 'none', sm: 'flex' } }}>
             <Avatar
               sx={{
                 width: 50,
@@ -801,12 +801,16 @@ const AdminPortal = () => {
             <MenuItem onClick={handleChangePassword}>
               {language === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}
             </MenuItem>
+            <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+              {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+            </MenuItem>
           </Menu>
           <Button 
             variant="contained" 
             color="error"
             startIcon={<LogoutSharp />}
             onClick={handleLogout}
+            sx={{ display: { xs: 'none', sm: 'flex' } }}
           >
             {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
           </Button>
@@ -851,44 +855,35 @@ const AdminPortal = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ bgcolor: '#f3e5f5', borderLeft: '5px solid #9c27b0' }}>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                {language === 'ar' ? 'الإيرادات' : 'Revenue'}
-              </Typography>
-              <Typography variant="h4" sx={{ color: '#9c27b0' }}>
-                $5,230
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
       </Grid>
 
       {/* Tabs */}
-      <Card sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
-        <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab label={language === 'ar' ? 'المرضى' : 'Patients'} />
-          <Tab label={language === 'ar' ? 'المعالجين' : 'Therapists'} />
-          <Tab label={language === 'ar' ? 'المواعيد' : 'Appointments'} />
-          <Tab label={language === 'ar' ? 'المسؤولين' : 'Admins'} />
-        </Tabs>
-        {tabValue === 0 && (
-          <Button 
-            variant="contained" 
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenAddDialog('patient')}
-            sx={{ ml: 2 }}
-          >
-            {language === 'ar' ? 'إضافة مريض' : 'Add Patient'}
-          </Button>
-        )}
-        {tabValue === 1 && (
-          <Button 
-            variant="contained" 
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenAddDialog('therapist')}
-            sx={{ ml: 2 }}
+      <Card sx={{ mb: 3, p: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: { xs: 'wrap', sm: 'nowrap' }, gap: 2 }}>
+          <Box sx={{ flex: 1, overflow: 'auto' }}>
+            <Tabs value={tabValue} onChange={handleTabChange} sx={{ minWidth: 'fit-content' }}>
+              <Tab label={language === 'ar' ? 'المرضى' : 'Patients'} />
+              <Tab label={language === 'ar' ? 'المعالجين' : 'Therapists'} />
+              <Tab label={language === 'ar' ? 'المواعيد' : 'Appointments'} />
+              <Tab label={language === 'ar' ? 'المسؤولين' : 'Admins'} />
+            </Tabs>
+          </Box>
+          {tabValue === 0 && (
+            <Button 
+              variant="contained" 
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenAddDialog('patient')}
+              sx={{ flexShrink: 0 }}
+            >
+              {language === 'ar' ? 'إضافة مريض' : 'Add Patient'}
+            </Button>
+          )}
+          {tabValue === 1 && (
+            <Button 
+              variant="contained" 
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenAddDialog('therapist')}
+              sx={{ flexShrink: 0 }}
           >
             {language === 'ar' ? 'إضافة معالج' : 'Add Therapist'}
           </Button>
@@ -898,7 +893,7 @@ const AdminPortal = () => {
             variant="contained" 
             startIcon={<AddIcon />}
             onClick={() => handleOpenAddDialog('appointment')}
-            sx={{ ml: 2 }}
+            sx={{ flexShrink: 0 }}
           >
             {language === 'ar' ? 'جدولة موعد' : 'Schedule Appointment'}
           </Button>
@@ -908,11 +903,12 @@ const AdminPortal = () => {
             variant="contained" 
             startIcon={<AddIcon />}
             onClick={() => handleOpenAddDialog('admin')}
-            sx={{ ml: 2 }}
+            sx={{ flexShrink: 0 }}
           >
             {language === 'ar' ? 'إضافة مسؤول' : 'Add Admin'}
           </Button>
         )}
+        </Box>
       </Card>
 
       {/* Patients Table */}
@@ -1035,7 +1031,7 @@ const AdminPortal = () => {
                   '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' } 
                 }}>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.name}</TableCell>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.email}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.user?.email || therapist.email || 'N/A'}</TableCell>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.specialization || therapist.specialty || 'N/A'}</TableCell>
                   <TableCell>
                     <Select
@@ -1179,7 +1175,7 @@ const AdminPortal = () => {
                           <MenuItem value="completed" sx={{ backgroundColor: '#2196f3', color: 'white', '&:hover': { backgroundColor: '#0b7dda' } }}>
                             {language === 'ar' ? 'مكتمل' : 'Completed'}
                           </MenuItem>
-                          <MenuItem value="cancelled" sx={{ backgroundColor: '#9c27b0', color: 'white', '&:hover': { backgroundColor: '#7b1fa2' } }}>
+                          <MenuItem value="cancelled" sx={{ backgroundColor: '#f44336', color: 'white', '&:hover': { backgroundColor: '#da190b' } }}>
                             {language === 'ar' ? 'ملغي' : 'Cancelled'}
                           </MenuItem>
                         </Select>

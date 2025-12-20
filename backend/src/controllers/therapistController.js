@@ -1,4 +1,6 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 import { isValidTimeFormat } from '../utils/validation.js';
 
 const prisma = new PrismaClient();
@@ -295,14 +297,12 @@ export const loginTherapist = async (req, res) => {
     }
 
     // Check password
-    const bcrypt = require('bcryptjs');
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
     // Generate JWT token
-    const jwt = require('jsonwebtoken');
     const token = jwt.sign(
       { id: user.id, email: user.email, role: 'therapist' },
       process.env.JWT_SECRET || 'your-secret-key',
@@ -313,7 +313,7 @@ export const loginTherapist = async (req, res) => {
       message: 'Login successful',
       token,
       therapist: {
-        id: user.id,
+        id: user.therapist.id,
         name: user.name,
         email: user.email,
         specialty: user.therapist?.specialization

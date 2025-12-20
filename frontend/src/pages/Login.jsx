@@ -7,7 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 import DarkModeToggle from '../components/DarkModeToggle';
 import ModernLoginButton from '../components/ModernLoginButton';
 import { patientAPI } from '../services/api';
-import { adminService } from '../services/apiService';
+import { adminService, therapistService } from '../services/apiService';
 
 const Login = () => {
   const { t, language } = useLanguage();
@@ -209,10 +209,10 @@ const Login = () => {
             navigate('/admin-portal');
             return;
           } else if (role === 'therapist') {
-            // Therapist login - implement similar to admin
-            const { data } = await patientAPI.login(email, password);
+            const { data } = await therapistService.login(email, password);
             
             localStorage.setItem('token', data.token);
+            localStorage.setItem('userId', data.therapist?.id || '');
             localStorage.setItem('userRole', 'therapist');
             localStorage.setItem('userName', data.therapist?.name || email);
             localStorage.setItem('userEmail', data.therapist?.email || email);
