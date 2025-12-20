@@ -18,9 +18,9 @@ router.get('/available-slots', getAvailableSlots);
 // Create appointment (public)
 router.post('/', createAppointment);
 
-// Admin routes (protected)
-router.put('/:id', authenticateAdmin, updateAppointment);
-router.patch('/:id/cancel', authenticateAdmin, cancelAppointment);
+// Update appointment (public - therapists and admins can update)
+router.put('/:id', updateAppointment);
+router.patch('/:id/cancel', cancelAppointment);
 router.delete('/:id', authenticateAdmin, deleteAppointment);
 
 export default router;
