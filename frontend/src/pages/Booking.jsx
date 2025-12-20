@@ -36,7 +36,6 @@ const Booking = () => {
 
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
     phone: '',
     service: '',
     date: '',
@@ -57,42 +56,34 @@ const Booking = () => {
     setMessage('');
 
     try {
-      const response = await fetch('https://alemad-physio.onrender.com/api/booking', {
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+      
+      // Call the booking API - it handles patient creation, appointment creation, and notification
+      const bookingRes = await fetch(`${API_BASE_URL}/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        // Save appointment to localStorage so it appears in admin portal
-        const appointments = JSON.parse(localStorage.getItem('patientAppointments') || '[]');
-        const newAppointment = {
-          id: Date.now(),
-          patientName: formData.name,
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
           service: formData.service,
           date: formData.date,
-          phone: formData.phone,
           message: formData.message,
-          status: 'pending',
-          createdAt: new Date().toISOString(),
-        };
-        appointments.push(newAppointment);
-        localStorage.setItem('patientAppointments', JSON.stringify(appointments));
+        }),
+      });
 
-        setMessageType('success');
-        setMessage(t('booking.success'));
-        setFormData({ name: '', email: '', phone: '', service: '', date: '', message: '' });
-      } else {
-        setMessageType('error');
-        setMessage(result.message || t('booking.error'));
+      const bookingData = await bookingRes.json();
+      if (!bookingRes.ok) {
+        throw new Error(bookingData.message || 'Failed to create booking');
       }
+
+      setMessageType('success');
+      setMessage(t('booking.success') || 'Booking successful! Admin will review and contact you soon.');
+      setFormData({ name: '', phone: '', service: '', date: '', message: '' });
     } catch (error) {
       setMessageType('error');
-      setMessage(t('booking.error'));
+      setMessage(error.message || t('booking.error') || 'Error booking appointment');
       console.error('Error:', error);
     } finally {
       setLoading(false);
@@ -122,7 +113,11 @@ const Booking = () => {
         </Typography>
 
       {message && (
-        <Alert severity={messageType} sx={{ mb: 3 }}>
+        <Alert 
+          severity={messageType} 
+          sx={{ mb: 2, animation: `${fadeInUp} 0.5s ease-out` }}
+          onClose={() => setMessage('')}
+        >
           {message}
         </Alert>
       )}
@@ -148,17 +143,6 @@ const Booking = () => {
           fullWidth
           variant="outlined"
           type="tel"
-          size="small"
-        />
-
-        <TextField
-          label="Email (Optional)"
-          name="email"
-          value={formData.email}
-          onChange={handleInputChange}
-          fullWidth
-          variant="outlined"
-          type="email"
           size="small"
         />
 

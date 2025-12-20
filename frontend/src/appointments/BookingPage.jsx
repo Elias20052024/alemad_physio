@@ -104,8 +104,10 @@ const BookingPage = () => {
         patientId: parseInt(patientId),
         therapistId: parseInt(formData.therapistId),
         service: formData.service,
-        date: formData.date,
-        time: formData.time,
+        appointmentDate: formData.date,
+        startTime: formData.time,
+        endTime: formData.time,
+        isFromBookingForm: true,
       });
 
       setSuccess(true);

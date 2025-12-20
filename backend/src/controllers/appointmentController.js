@@ -77,7 +77,7 @@ export const getAvailableSlots = async (req, res) => {
 
 export const createAppointment = async (req, res) => {
   try {
-    const { therapistId, patientId, appointmentDate, startTime, endTime, status = 'pending', notes } = req.body;
+    const { therapistId, patientId, appointmentDate, startTime, endTime, status = 'pending', notes, isFromBookingForm } = req.body;
 
     if (!therapistId || !patientId || !appointmentDate || !startTime || !endTime) {
       return res.status(400).json({ message: 'All required fields must be provided: therapistId, patientId, appointmentDate, startTime, endTime' });
@@ -189,7 +189,22 @@ export const cancelAppointment = async (req, res) => {
 export const deleteAppointment = async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.appointment.delete({ where: { id: parseInt(id) } });
+    const appointmentId = parseInt(id, 10);
+    
+    if (isNaN(appointmentId) || appointmentId <= 0) {
+      return res.status(400).json({ message: 'Invalid appointment ID' });
+    }
+    
+    // First delete any related notifications
+    await prisma.notification.deleteMany({
+      where: { appointmentId: appointmentId }
+    });
+    
+    // Then delete the appointment
+    await prisma.appointment.delete({ 
+      where: { id: appointmentId } 
+    });
+    
     res.json({ message: 'Appointment deleted' });
   } catch (error) {
     console.error('Error deleting appointment:', error);

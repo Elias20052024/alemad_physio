@@ -296,35 +296,6 @@ const Login = () => {
           </Alert>
         )}
 
-        {/* Sign Up / Login Toggle for Patient Tab */}
-        {tabValue === 0 && (
-          <Box sx={{ textAlign: 'center', mb: 3, pb: 2, borderBottom: '1px solid #ddd' }}>
-            <Typography variant="body2" sx={{ color: '#666' }}>
-              {isSignUp 
-                ? (language === 'ar' ? 'هل لديك حساب بالفعل؟' : 'Already have an account?')
-                : (language === 'ar' ? 'ليس لديك حساب؟' : "Don't have an account?")
-              }
-              <Button 
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  setError('');
-                  setEmailError('');
-                  setPasswordMatchError('');
-                  setPassword('');
-                  setConfirmPassword('');
-                  setPhone('');
-                }}
-                sx={{ color: '#1C6FB5', fontWeight: 'bold', textTransform: 'none', ml: 1 }}
-              >
-                {isSignUp 
-                  ? (language === 'ar' ? 'تسجيل الدخول' : 'Login')
-                  : (language === 'ar' ? 'إنشاء حساب' : 'Create Account')
-                }
-              </Button>
-            </Typography>
-          </Box>
-        )}
-
         <form onSubmit={handleLogin}>
           <TextField
             fullWidth
@@ -478,16 +449,6 @@ const Login = () => {
 
 
 
-          <Typography 
-            variant="body2" 
-            align="center" 
-            sx={{ mt: 3, color: isDark ? '#999' : '#666', fontSize: { xs: '0.85rem', md: '0.95rem' } }}
-          >
-            {language === 'ar' 
-              ? 'للأغراض التجريبية، استخدم أي بريد إلكتروني وكلمة مرور قوية'
-              : 'For demo purposes, use any email and a strong password'
-            }
-          </Typography>
         </form>
       </Card>
     </Container>

@@ -46,11 +46,11 @@ export const getPatientById = async (req, res) => {
 
 export const createPatient = async (req, res) => {
   try {
-    const { fullName, phone, gender, age, medicalHistory, email, password } = req.body;
+    const { fullName, phone, gender = 'Other', age, medicalHistory, email, password } = req.body;
 
     // Validate all required fields
-    if (!fullName || !phone || !gender) {
-      return res.status(400).json({ message: 'All required fields missing: fullName, phone, gender' });
+    if (!fullName || !phone) {
+      return res.status(400).json({ message: 'Required fields missing: fullName, phone' });
     }
 
     // Validate name is not empty
@@ -72,8 +72,8 @@ export const createPatient = async (req, res) => {
       }
     }
 
-    // Validate phone format - must be valid phone number
-    const phoneRegex = /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/;
+    // Validate phone format - must be valid phone number (relaxed validation)
+    const phoneRegex = /^[+]?[0-9\s().\-]{8,}$/;
     if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
       return res.status(400).json({ message: 'Invalid phone number format. Use format like: +966501234567 or (050) 123-4567' });
     }

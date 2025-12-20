@@ -5,6 +5,7 @@ import { LogoutSharp, Edit, Delete, Add as AddIcon, Visibility, VisibilityOff, M
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { therapistService, patientService } from '@services/apiService.js';
+import NotificationCenter from '../components/NotificationCenter';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
@@ -96,7 +97,10 @@ const AdminPortal = () => {
     }
   };
   const adminName = localStorage.getItem('userName') || 'Admin';
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useState(() => {
+    const savedTab = localStorage.getItem('adminPortalTab');
+    return savedTab ? parseInt(savedTab, 10) : 0;
+  });
   const [profileMenuAnchor, setProfileMenuAnchor] = useState(null);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
@@ -261,35 +265,14 @@ const AdminPortal = () => {
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
+    localStorage.setItem('adminPortalTab', newValue.toString());
   };
 
   // Load patient bookings from localStorage when component mounts or when bookings change
   useEffect(() => {
     const loadPatientBookings = () => {
-      const patientBookings = JSON.parse(localStorage.getItem('patientAppointments') || '[]');
-      
-      // Convert patient bookings to appointment format
-      const convertedBookings = patientBookings.map(booking => ({
-        id: booking.id,
-        patientName: booking.patientName,
-        therapistName: 'Not Assigned',
-        date: booking.date,
-        time: booking.time || '---',
-        service: booking.service,
-        phone: booking.phone,
-        message: booking.message,
-        status: (booking.status || 'pending').trim(),
-        type: 'patient-booking'
-      }));
-      
-      // Get admin-created appointments from API (we'll fetch these separately)
-      // Don't override here, just combine with patient bookings
-      if (appointments.length > 0) {
-        const adminAppointments = appointments.filter(app => app.type !== 'patient-booking');
-        setAppointments([...adminAppointments, ...convertedBookings]);
-      } else {
-        setAppointments(convertedBookings);
-      }
+      // Patient bookings are now created through the booking API as real appointments
+      // No need to load from localStorage anymore - they're in the database
     };
 
     // Load patient bookings once on mount
@@ -765,7 +748,7 @@ const AdminPortal = () => {
         </Box>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           {/* Profile Card */}
-          <Card sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, minWidth: '200px', bgcolor: '#f5f5f5', borderRadius: '10px', display: { xs: 'none', sm: 'flex' } }}>
+          <Card sx={{ p: 1.5, display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1.5, minWidth: '200px', bgcolor: '#f5f5f5', borderRadius: '10px' }}>
             <Avatar
               sx={{
                 width: 50,
@@ -787,6 +770,7 @@ const AdminPortal = () => {
               </Typography>
             </Box>
           </Card>
+          <NotificationCenter />
           <IconButton onClick={handleProfileMenuOpen} sx={{ color: '#1C6FB5' }}>
             <MoreVert />
           </IconButton>

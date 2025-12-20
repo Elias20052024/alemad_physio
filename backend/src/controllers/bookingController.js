@@ -5,21 +5,13 @@ const prisma = new PrismaClient();
 
 export const createBooking = async (req, res) => {
   try {
-    const { name, phone, service, date, message, email } = req.body;
+    const { name, phone, service, date, message } = req.body;
 
     // Validation
-    if (!name || !phone || !service || !date) {
+    if (!name || !phone || !date) {
       return res.status(400).json({
         success: false,
-        message: 'Please fill in all required fields: name, phone, service, date',
-      });
-    }
-
-    // Validate phone format (basic validation)
-    if (!/^\d{10,}$/.test(phone.replace(/\D/g, ''))) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid phone number format',
+        message: 'Name, phone, and date are required',
       });
     }
 
@@ -32,48 +24,103 @@ export const createBooking = async (req, res) => {
       });
     }
 
-    // Create booking in Booking table (not Appointment)
-    const booking = await prisma.booking.create({
+    // Step 1: Create patient
+    const patient = await prisma.patient.create({
       data: {
-        name,
-        phone,
-        service,
-        date: bookingDate,
-        message: message || '',
+        phone: phone,
+        gender: 'Other',
+        user: {
+          create: {
+            name: name,
+            email: `${name.toLowerCase().replace(/\s+/g, '.')}@booking.local`,
+            password: 'temp123',
+            role: 'patient',
+          },
+        },
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    // Step 2: Get first available therapist
+    const therapist = await prisma.therapist.findFirst({
+      include: { user: true },
+    });
+
+    if (!therapist) {
+      return res.status(404).json({
+        success: false,
+        message: 'No therapists available',
+      });
+    }
+
+    // Step 3: Generate random time slot
+    const availableTimes = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+    const randomStartTime = availableTimes[Math.floor(Math.random() * availableTimes.length)];
+    const endHour = (parseInt(randomStartTime.split(':')[0]) + 1).toString().padStart(2, '0');
+    const randomEndTime = `${endHour}:00`;
+
+    // Step 4: Create appointment
+    const appointment = await prisma.appointment.create({
+      data: {
+        therapistId: therapist.id,
+        patientId: patient.id,
+        appointmentDate: bookingDate,
+        startTime: randomStartTime,
+        endTime: randomEndTime,
+        status: 'pending',
+        notes: message || null,
+      },
+      include: {
+        therapist: { include: { user: true } },
+        patient: { include: { user: true } },
+      },
+    });
+
+    // Step 5: Create notification for admin
+    const notification = await prisma.notification.create({
+      data: {
+        appointmentId: appointment.id,
+        type: 'booking_request',
+        title: `New Appointment Request from ${patient.user?.name || 'Patient'}`,
+        message: `Patient ${patient.user?.name || 'Unknown'} - Phone: ${phone}`,
+        isRead: false,
         status: 'pending',
       },
     });
 
-    console.log('✅ New booking created:', {
-      id: booking.id,
-      name,
-      phone,
-      service,
-      date,
-      message,
+    console.log('✅ New booking created with notification:', {
+      bookingId: appointment.id,
+      patientId: patient.id,
+      patientName: name,
+      notificationId: notification.id,
     });
 
-    // Send email notifications
-    await sendBookingNotificationToAdmin(booking);
-    if (email) {
-      await sendBookingConfirmationToClient({ ...booking, email });
-    }
-
-    res.status(201).json({
+    res.json({
       success: true,
-      message: 'Booking received successfully. We will contact you soon!',
-      bookingId: booking.id,
+      message: 'Booking created successfully',
       booking: {
-        id: booking.id,
-        date: booking.date,
-        status: booking.status,
+        id: appointment.id,
+        patientId: patient.id,
+        patientName: patient.user?.name,
+        therapistId: therapist.id,
+        therapistName: therapist.user?.name,
+        appointmentDate: appointment.appointmentDate,
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
+      },
+      notification: {
+        id: notification.id,
+        title: notification.title,
+        status: notification.status,
       },
     });
   } catch (error) {
-    console.error('❌ Error creating booking:', error);
+    console.error('Error creating booking:', error);
     res.status(500).json({
       success: false,
-      message: 'Error processing booking',
+      message: 'Error creating booking',
       error: error.message,
     });
   }
