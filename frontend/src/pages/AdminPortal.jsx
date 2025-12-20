@@ -1012,9 +1012,6 @@ const AdminPortal = () => {
                   {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
                 </TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
-                  {language === 'ar' ? 'التخصص' : 'Specialization'}
-                </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'الحالة' : 'Status'}
                 </TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
@@ -1032,7 +1029,6 @@ const AdminPortal = () => {
                 }}>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.name}</TableCell>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.user?.email || therapist.email || 'N/A'}</TableCell>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.specialization || therapist.specialty || 'N/A'}</TableCell>
                   <TableCell>
                     <Select
                       value={therapist.status || 'active'}
@@ -1300,24 +1296,6 @@ const AdminPortal = () => {
                 margin="normal"
                 required
               />
-              <FormControl fullWidth margin="normal">
-                <InputLabel>{language === 'ar' ? 'التخصص' : 'Specialty'}</InputLabel>
-                <Select
-                  value={formData.specialty || ''}
-                  onChange={(e) => setFormData({ ...formData, specialty: e.target.value })}
-                  label={language === 'ar' ? 'التخصص' : 'Specialty'}
-                  required
-                >
-                  <MenuItem value="">
-                    <em>{language === 'ar' ? 'اختر التخصص' : 'Select Specialty'}</em>
-                  </MenuItem>
-                  {specialtyOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
               <TextField
                 fullWidth
                 label={language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
@@ -1584,24 +1562,6 @@ const AdminPortal = () => {
                 margin="normal"
                 required
               />
-              <FormControl fullWidth margin="normal">
-                <InputLabel>{language === 'ar' ? 'التخصص' : 'Specialty'}</InputLabel>
-                <Select
-                  value={formData.specialty || ''}
-                  onChange={(e) => setFormData({ ...formData, specialty: e.target.value })}
-                  label={language === 'ar' ? 'التخصص' : 'Specialty'}
-                  required
-                >
-                  <MenuItem value="">
-                    <em>{language === 'ar' ? 'اختر التخصص' : 'Select Specialty'}</em>
-                  </MenuItem>
-                  {specialtyOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
               <TextField
                 fullWidth
                 label={language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
