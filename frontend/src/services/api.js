@@ -1,9 +1,10 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 // Debug log
 console.log('🔌 API URL:', API_BASE_URL);
+console.log('📝 VITE_API_BASE_URL env:', import.meta.env.VITE_API_BASE_URL);
 console.log('📝 VITE_API_URL env:', import.meta.env.VITE_API_URL);
 
 const apiClient = axios.create({
