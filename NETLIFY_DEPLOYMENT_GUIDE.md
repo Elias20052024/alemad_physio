@@ -1,0 +1,562 @@
+# Netlify Deployment Guide - Alemad Physio
+
+This guide walks through deploying the Alemad Physio application to Netlify step by step.
+
+> **Note:** Netlify can host the frontend React app easily. For the Node.js backend, we'll use a service like Render.com or Railway.app alongside Netlify.
+
+---
+
+## Table of Contents
+
+1. [Prerequisites](#prerequisites)
+2. [Frontend Deployment to Netlify](#frontend-deployment-to-netlify)
+3. [Backend Deployment](#backend-deployment)
+4. [Environment Configuration](#environment-configuration)
+5. [Testing the Deployment](#testing-the-deployment)
+6. [Troubleshooting](#troubleshooting)
+
+---
+
+## Prerequisites
+
+Before starting, ensure you have:
+
+- ✅ GitHub account with the repository pushed
+- ✅ Netlify account (create at [netlify.com](https://netlify.com))
+- ✅ Git installed locally
+- ✅ Node.js 18+ installed
+- ✅ Backend API deployed or ready to deploy
+
+---
+
+## Frontend Deployment to Netlify
+
+### Step 1: Build the Frontend Locally
+
+First, test that your frontend builds successfully:
+
+```bash
+cd frontend
+npm install
+npm run build
+```
+
+You should see a `dist/` folder created with your production build.
+
+### Step 2: Create Netlify Account
+
+1. Go to [netlify.com](https://netlify.com)
+2. Sign up with your GitHub account
+3. Click "Authorize Netlify"
+
+### Step 3: Connect Your Repository
+
+1. Click **"New site from Git"** button
+2. Choose **GitHub** as your Git provider
+3. Authorize Netlify to access your GitHub account
+4. Search for and select **`alemad_physio`** repository
+
+### Step 4: Configure Build Settings
+
+When connecting your repository, you'll see a configuration page:
+
+**Build Settings:**
+- **Base directory:** `frontend`
+- **Build command:** `npm install && npm run build`
+- **Publish directory:** `frontend/dist`
+
+![Netlify Build Settings](https://imgur.com/a/sample)
+
+### Step 5: Set Environment Variables
+
+1. Click **"Site settings"** → **"Build & deploy"** → **"Environment"**
+2. Click **"Edit variables"**
+3. Add environment variables:
+
+```
+VITE_API_BASE_URL=https://your-backend-api.com/api
+VITE_APP_NAME=Alemad Physio
+```
+
+> Replace `https://your-backend-api.com` with your actual backend URL
+
+### Step 6: Deploy
+
+1. Click **"Deploy"** button
+2. Netlify will automatically:
+   - Clone your repository
+   - Install dependencies
+   - Build your frontend
+   - Deploy to CDN
+3. Wait for the build to complete (usually 2-5 minutes)
+4. You'll get a live URL like `https://your-site-name.netlify.app`
+
+---
+
+## Backend Deployment
+
+### Option A: Deploy to Render.com (Recommended)
+
+#### Step 1: Prepare Backend
+
+1. Update `backend/package.json` to include a build script:
+
+```json
+{
+  "scripts": {
+    "start": "node src/server.js",
+    "build": "npm install && prisma generate && prisma migrate deploy"
+  }
+}
+```
+
+2. Create a `.env.production` file in `backend/`:
+
+```
+PORT=3000
+NODE_ENV=production
+DATABASE_URL=postgresql://user:password@host:port/dbname
+JWT_SECRET=your-secret-key
+CORS_ORIGIN=https://your-netlify-site.netlify.app
+```
+
+#### Step 2: Create Render Account
+
+1. Go to [render.com](https://render.com)
+2. Sign up with GitHub
+3. Click **"New +"** → **"Web Service"**
+
+#### Step 3: Connect Repository
+
+1. Select **GitHub** and find `alemad_physio`
+2. Choose the repository
+3. Click **"Connect"**
+
+#### Step 4: Configure Render Service
+
+**Basic Settings:**
+- **Name:** `alemad-physio-backend`
+- **Environment:** `Node`
+- **Build Command:** `cd backend && npm install && prisma generate && prisma migrate deploy`
+- **Start Command:** `cd backend && npm start`
+
+**Environment Variables:**
+Add these in the Render dashboard:
+
+```
+PORT=3000
+NODE_ENV=production
+DATABASE_URL=postgresql://user:password@host:5432/alemad_physio
+JWT_SECRET=your-super-secret-key-min-32-chars
+CORS_ORIGIN=https://your-netlify-site.netlify.app
+```
+
+#### Step 5: Add PostgreSQL Database
+
+1. Click **"Create"** → **"PostgreSQL"**
+2. Configure:
+   - **Name:** `alemad-physio-db`
+   - **PostgreSQL Version:** 15
+   - **Region:** Your preferred region
+3. Copy the connection string
+4. Add to your backend service environment variables as `DATABASE_URL`
+
+#### Step 6: Deploy
+
+1. Click **"Create Web Service"**
+2. Render will automatically deploy
+3. Get your backend URL: `https://your-backend-name.onrender.com`
+
+---
+
+### Option B: Deploy to Railway.app
+
+#### Step 1: Create Railway Account
+
+1. Go to [railway.app](https://railway.app)
+2. Sign up with GitHub
+3. Create a new project
+
+#### Step 2: Add Backend Service
+
+1. Click **"New"** → **"GitHub Repo"**
+2. Select `alemad_physio` repository
+3. Configure:
+   - **Service name:** `backend`
+   - **Root directory:** `backend`
+   - **Start command:** `npm start`
+
+#### Step 3: Add Database
+
+1. Click **"New"** → **"Database"** → **"PostgreSQL"**
+2. Railway will create and connect automatically
+
+#### Step 4: Set Environment Variables
+
+In Railway dashboard, add:
+
+```
+DATABASE_URL=[auto-generated by Railway]
+NODE_ENV=production
+JWT_SECRET=your-secret-key
+CORS_ORIGIN=https://your-netlify-site.netlify.app
+PORT=3000
+```
+
+#### Step 5: Deploy
+
+Railway auto-deploys on push. Get your backend URL from the service settings.
+
+---
+
+## Environment Configuration
+
+### Frontend Environment Variables
+
+Update `frontend/.env.production`:
+
+```env
+VITE_API_BASE_URL=https://your-backend-api.onrender.com/api
+VITE_APP_NAME=Alemad Physio
+VITE_APP_VERSION=1.0.0
+```
+
+Or set in Netlify dashboard under **Site settings** → **Build & deploy** → **Environment**.
+
+### Backend Environment Variables
+
+Set in your backend service (Render/Railway):
+
+```
+NODE_ENV=production
+PORT=3000
+DATABASE_URL=postgresql://user:password@host:5432/dbname
+JWT_SECRET=your-32-character-secret-key-here
+CORS_ORIGIN=https://your-site.netlify.app
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
+```
+
+---
+
+## Update Netlify Configuration
+
+### Step 1: Create `netlify.toml`
+
+Create a `netlify.toml` file in the root of your project:
+
+```toml
+[build]
+base = "frontend"
+command = "npm run build"
+publish = "dist"
+
+[env.production]
+VITE_API_BASE_URL = "https://your-backend-api.onrender.com/api"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
+
+[[headers]]
+for = "/*"
+[headers.values]
+X-Frame-Options = "DENY"
+X-Content-Type-Options = "nosniff"
+X-XSS-Protection = "1; mode=block"
+```
+
+### Step 2: Push to GitHub
+
+```bash
+git add netlify.toml
+git commit -m "Add Netlify configuration"
+git push origin main
+```
+
+Netlify will automatically redeploy with the new configuration.
+
+---
+
+## Testing the Deployment
+
+### Test Frontend
+
+1. Visit your Netlify URL: `https://your-site.netlify.app`
+2. Check browser console (F12) for errors
+3. Verify all pages load correctly
+4. Test navigation and forms
+
+### Test Backend Connection
+
+1. Open browser console
+2. Try making an API request:
+
+```javascript
+fetch('https://your-backend-api.onrender.com/api/patients')
+  .then(res => res.json())
+  .then(data => console.log(data))
+  .catch(err => console.error(err))
+```
+
+3. Should see patient data or proper error handling
+
+### Test Authentication
+
+1. Try logging in with test credentials
+2. Verify token is stored in localStorage
+3. Check that protected pages require authentication
+
+---
+
+## Continuous Deployment
+
+Both Netlify and Render/Railway support automatic deployments:
+
+### Enable Auto-Deploy
+
+1. **Netlify:** Automatically enabled - deploys on every push to `main`
+2. **Render/Railway:** Automatically enabled - deploys on every push to `main`
+
+### Manual Deployment Triggers
+
+**Netlify:**
+```bash
+# Trigger redeploy from CLI
+curl -X POST -d {} https://api.netlify.com/build_hooks/your_build_hook_id
+```
+
+**Render:**
+- Use "Manual Deploy" button in dashboard
+- Or push to GitHub to trigger auto-deploy
+
+---
+
+## Domain Configuration
+
+### Add Custom Domain to Netlify
+
+1. Go to **Site settings** → **Domain management**
+2. Click **"Add custom domain"**
+3. Enter your domain (e.g., `alemad-physio.com`)
+4. Follow DNS configuration instructions
+5. Update `CORS_ORIGIN` in backend to your custom domain
+
+### Update Backend CORS
+
+After setting custom domain, update backend environment variable:
+
+```
+CORS_ORIGIN=https://your-custom-domain.com
+```
+
+---
+
+## Monitoring & Logs
+
+### Netlify Logs
+
+1. **Site settings** → **Logs** → **Deploy log** or **Function log**
+2. View real-time logs during deployments
+3. Check build failures and errors
+
+### Backend Logs (Render)
+
+1. Go to your web service
+2. Click **"Logs"** tab
+3. View application logs in real-time
+4. Check for database connection issues
+
+### Backend Logs (Railway)
+
+1. Click on your backend service
+2. View logs in the right panel
+3. Filter by log level (error, warning, info)
+
+---
+
+## Database Backups
+
+### Render PostgreSQL
+
+1. Go to your database in Render
+2. Click **"Backups"** tab
+3. View automated daily backups
+4. Download backup if needed
+
+### Railway PostgreSQL
+
+1. Click on your database service
+2. Check **"Metrics"** for health
+3. Backups are automatically managed
+
+### Manual Backup
+
+```bash
+# From your local machine
+pg_dump DATABASE_URL > backup.sql
+
+# Restore
+psql DATABASE_URL < backup.sql
+```
+
+---
+
+## Rollback Procedures
+
+### If Frontend Deployment Fails
+
+1. Go to **Deploys** on Netlify
+2. Click previous successful deployment
+3. Click **"Publish deploy"**
+
+### If Backend Deployment Fails
+
+**Render:**
+1. Go to **Deployments** tab
+2. Select previous successful deployment
+3. Click **"Restart"**
+
+**Railway:**
+1. Go to **Deployments** section
+2. Click **"Redeploy"** on previous version
+
+---
+
+## Performance Optimization
+
+### Frontend Optimization
+
+1. **Enable Netlify CDN caching:**
+   - Settings → Caching
+   - Set appropriate cache headers in `netlify.toml`
+
+2. **Optimize images:**
+   ```bash
+   # Compress images before deployment
+   npx imagemin frontend/public/**/*.{png,jpg} --out-dir=frontend/public
+   ```
+
+3. **Minify & bundle:**
+   - Vite automatically minifies
+   - Check bundle size: `npm run build -- --analyze`
+
+### Backend Optimization
+
+1. **Enable connection pooling:**
+   - Add to DATABASE_URL: `?schema=public&connection_limit=5`
+
+2. **Add caching headers:**
+   - Implement Redis for session caching
+   - Cache API responses
+
+---
+
+## Security Checklist
+
+- ✅ Set strong JWT_SECRET (minimum 32 characters)
+- ✅ Enable HTTPS (automatic on Netlify)
+- ✅ Configure CORS_ORIGIN to your domain only
+- ✅ Use environment variables for secrets (never commit them)
+- ✅ Enable basic auth on sensitive endpoints
+- ✅ Set secure headers in `netlify.toml`
+- ✅ Rotate JWT secrets periodically
+- ✅ Use HTTPS for all API calls
+- ✅ Enable database SSL connections
+- ✅ Implement rate limiting on backend
+
+---
+
+## Troubleshooting
+
+### Issue: Build fails on Netlify
+
+**Solution:**
+1. Check build logs: **Site settings** → **Logs** → **Deploy log**
+2. Verify `package.json` in `frontend/` directory exists
+3. Check Node version: Add `node_version` in `netlify.toml`:
+
+```toml
+[build]
+node_version = "18.0.0"
+```
+
+### Issue: API calls fail with 404
+
+**Solution:**
+1. Verify backend is running and accessible
+2. Check VITE_API_BASE_URL is correct in frontend
+3. Verify CORS_ORIGIN matches frontend URL in backend
+4. Check backend logs for errors
+
+### Issue: Database connection error
+
+**Solution:**
+1. Verify DATABASE_URL is correct
+2. Check database is running and accessible
+3. Run migrations: `prisma migrate deploy`
+4. Verify environment variables are set correctly
+
+### Issue: Blank page on load
+
+**Solution:**
+1. Check browser console for errors (F12)
+2. Verify all dependencies are installed
+3. Check for routing issues in React Router
+4. Verify API base URL configuration
+
+### Issue: Authentication not persisting
+
+**Solution:**
+1. Verify localStorage is enabled
+2. Check JWT token expiration
+3. Verify token is being saved correctly
+4. Check backend token validation
+
+### Issue: CORS errors
+
+**Solution:**
+1. Verify CORS_ORIGIN matches your domain exactly
+2. Check backend has CORS middleware enabled
+3. Ensure credentials are being sent in requests:
+
+```javascript
+fetch(url, {
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' }
+})
+```
+
+---
+
+## Next Steps
+
+1. ✅ Deploy frontend to Netlify
+2. ✅ Deploy backend to Render/Railway
+3. ✅ Set up custom domain
+4. ✅ Configure email notifications
+5. ✅ Set up monitoring and alerts
+6. ✅ Configure backup schedules
+7. ✅ Set up CI/CD pipeline
+
+---
+
+## Useful Resources
+
+- [Netlify Documentation](https://docs.netlify.com)
+- [Netlify Deploy Settings](https://docs.netlify.com/configure-builds/get-started/)
+- [Render Documentation](https://render.com/docs)
+- [Railway Documentation](https://docs.railway.app)
+- [Vite Build Guide](https://vitejs.dev/guide/build.html)
+- [Prisma Deployment Guide](https://www.prisma.io/docs/guides/deployment)
+
+---
+
+## Support
+
+For issues with:
+- **Netlify:** [netlify.com/support](https://netlify.com/support)
+- **Render:** [render.com/support](https://render.com/support)
+- **Railway:** [railway.app/docs](https://railway.app/docs)
+- **Your Project:** Check logs and error messages first
