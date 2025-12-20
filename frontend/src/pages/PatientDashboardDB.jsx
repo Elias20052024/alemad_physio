@@ -28,7 +28,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { appointmentAPI, patientAPI } from '@/services/api';
 
 const PatientDashboardDB = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const patientId = localStorage.getItem('patientId');
 
@@ -120,7 +120,7 @@ const PatientDashboardDB = () => {
       {/* Welcome Section */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2 }}>
-          👋 Welcome, {patientData?.fullName || 'Patient'}!
+          👋 {language === 'ar' ? 'أهلاً وسهلاً' : 'Welcome'}, {patientData?.user?.name || localStorage.getItem('userName') || 'Patient'}!
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       </Box>
@@ -131,9 +131,9 @@ const PatientDashboardDB = () => {
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>
-                📱 Phone
+                📱 {language === 'ar' ? 'الهاتف' : 'Phone'}
               </Typography>
-              <Typography variant="h6">{patientData?.phone}</Typography>
+              <Typography variant="h6">{patientData?.phone || 'N/A'}</Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -141,9 +141,9 @@ const PatientDashboardDB = () => {
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>
-                🎂 Age
+                🎂 {language === 'ar' ? 'السن' : 'Age'}
               </Typography>
-              <Typography variant="h6">{patientData?.age} years</Typography>
+              <Typography variant="h6">{patientData?.dateOfBirth ? new Date().getFullYear() - new Date(patientData.dateOfBirth).getFullYear() : 'N/A'} {patientData?.dateOfBirth ? (language === 'ar' ? 'سنة' : 'years') : ''}</Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -151,9 +151,9 @@ const PatientDashboardDB = () => {
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>
-                👤 Gender
+                👤 {language === 'ar' ? 'الجنس' : 'Gender'}
               </Typography>
-              <Typography variant="h6">{patientData?.gender}</Typography>
+              <Typography variant="h6">{patientData?.gender || 'N/A'}</Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -161,7 +161,7 @@ const PatientDashboardDB = () => {
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>
-                📋 Total Appointments
+                📋 {language === 'ar' ? 'إجمالي المواعيد' : 'Total Appointments'}
               </Typography>
               <Typography variant="h6">{appointments.length}</Typography>
             </CardContent>
@@ -173,14 +173,8 @@ const PatientDashboardDB = () => {
       <Box sx={{ mb: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-            📅 My Appointments
+            📅 {language === 'ar' ? 'مواعيدي' : 'My Appointments'}
           </Typography>
-          <Button
-            variant="contained"
-            onClick={() => navigate('/appointments/book')}
-          >
-            + Book New Appointment
-          </Button>
         </Box>
 
         {appointments.length > 0 ? (
@@ -199,17 +193,17 @@ const PatientDashboardDB = () => {
               <TableBody>
                 {appointments.map((appointment) => (
                   <TableRow key={appointment.id} hover>
-                    <TableCell>{appointment.therapist?.name}</TableCell>
-                    <TableCell>{appointment.service}</TableCell>
+                    <TableCell>{appointment.therapist?.user?.name || appointment.therapist?.name || 'N/A'}</TableCell>
+                    <TableCell>{appointment.therapist?.specialization || appointment.therapist?.specialty || 'General'}</TableCell>
                     <TableCell>
                       <Stack spacing={0.5}>
-                        <span>{new Date(appointment.date).toLocaleDateString()}</span>
+                        <span>{appointment.appointmentDate ? new Date(appointment.appointmentDate).toLocaleDateString() : 'Invalid Date'}</span>
                         <span style={{ fontSize: '0.85rem', color: '#666' }}>
-                          {appointment.time}
+                          {appointment.startTime || appointment.time || 'N/A'}
                         </span>
                       </Stack>
                     </TableCell>
-                    <TableCell>{appointment.duration} min</TableCell>
+                    <TableCell>{appointment.duration || '-'} min</TableCell>
                     <TableCell>
                       <Chip
                         label={getStatusLabel(appointment.status)}
@@ -238,7 +232,7 @@ const PatientDashboardDB = () => {
           </TableContainer>
         ) : (
           <Alert severity="info">
-            No appointments yet. <strong>Book your first appointment now!</strong>
+            {language === 'ar' ? 'لا توجد مواعيد حالياً' : 'No appointments yet.'}
           </Alert>
         )}
       </Box>

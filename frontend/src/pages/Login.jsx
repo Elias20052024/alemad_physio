@@ -121,19 +121,25 @@ const Login = () => {
           return;
         }
 
-        // Call API to register patient
-        const { data } = await patientAPI.register(name, email, password, phone, age, gender);
-        
-        // Store token and patient info
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('userRole', 'patient');
-        localStorage.setItem('patientId', data.patient.id);
-        localStorage.setItem('userName', data.patient.fullName);
-        localStorage.setItem('userEmail', data.patient.email);
-        localStorage.setItem('isLoggedIn', 'true');
+        try {
+          // Call API to register patient
+          const { data } = await patientAPI.register(name, email, password, phone, age, gender);
+          
+          // Store token and patient info
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('userRole', 'patient');
+          localStorage.setItem('patientId', data.patient.id);
+          localStorage.setItem('userName', data.patient.fullName);
+          localStorage.setItem('userEmail', data.patient.email);
+          localStorage.setItem('isLoggedIn', 'true');
 
-        setError('');
-        navigate('/patient-dashboard');
+          setError('');
+          setLoading(false);
+          navigate('/patient-dashboard');
+        } catch (err) {
+          setError(err.response?.data?.message || 'Registration failed. Please try again.');
+          setLoading(false);
+        }
       } 
       // Patient login
       else if (tabValue === 0 && !isSignUp) {
@@ -143,19 +149,25 @@ const Login = () => {
           return;
         }
 
-        // Call API to login patient
-        const { data } = await patientAPI.login(email, password);
-        
-        // Store token and patient info
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('userRole', 'patient');
-        localStorage.setItem('patientId', data.patient.id);
-        localStorage.setItem('userName', data.patient.fullName);
-        localStorage.setItem('userEmail', data.patient.email);
-        localStorage.setItem('isLoggedIn', 'true');
+        try {
+          // Call API to login patient
+          const { data } = await patientAPI.login(email, password);
+          
+          // Store token and patient info
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('userRole', 'patient');
+          localStorage.setItem('patientId', data.patient.id);
+          localStorage.setItem('userName', data.patient.fullName);
+          localStorage.setItem('userEmail', data.patient.email);
+          localStorage.setItem('isLoggedIn', 'true');
 
-        setError('');
-        navigate('/patient-dashboard');
+          setError('');
+          setLoading(false);
+          navigate('/patient-dashboard');
+        } catch (err) {
+          setError(err.response?.data?.message || 'Login failed. Please try again.');
+          setLoading(false);
+        }
       }
       // Other roles (therapist, admin) - keep mock logic for now
       else {

@@ -26,9 +26,10 @@ export const getPatientById = async (req, res) => {
     const patient = await prisma.patient.findUnique({
       where: { id: parseInt(id) },
       include: {
+        user: true,
         appointments: {
           include: { therapist: true },
-          orderBy: { date: 'desc' }
+          orderBy: { appointmentDate: 'desc' }
         }
       }
     });
@@ -45,7 +46,7 @@ export const getPatientById = async (req, res) => {
 
 export const createPatient = async (req, res) => {
   try {
-    const { fullName, phone, gender, medicalHistory, email, password } = req.body;
+    const { fullName, phone, gender, age, medicalHistory, email, password } = req.body;
 
     // Validate all required fields
     if (!fullName || !phone || !gender) {
@@ -84,7 +85,6 @@ export const createPatient = async (req, res) => {
     }
 
     // Hash password (use provided password or default)
-    const bcrypt = require('bcryptjs');
     const hashedPassword = await bcrypt.hash(password || 'default-password', 10);
 
     // Create User first (required for Patient)
@@ -101,7 +101,8 @@ export const createPatient = async (req, res) => {
     const patient = await prisma.patient.create({
       data: { 
         phone: phone.trim(), 
-        gender, 
+        gender,
+        age: age ? parseInt(age) : null,
         medicalHistory: medicalHistory ? medicalHistory.trim() : null,
         user: { connect: { id: user.id } }
       },
@@ -117,9 +118,9 @@ export const createPatient = async (req, res) => {
 export const updatePatient = async (req, res) => {
   try {
     const { id } = req.params;
-    const { fullName, phone, gender, medicalHistory } = req.body;
+    const { fullName, phone, gender, age, medicalHistory, password, status } = req.body;
 
-    // Get the patient with user
+    // Get the patient with user info
     const patient = await prisma.patient.findUnique({
       where: { id: parseInt(id) },
       include: { user: true }
@@ -151,7 +152,9 @@ export const updatePatient = async (req, res) => {
       data: {
         ...(phone && { phone: phone.trim() }),
         ...(gender && { gender }),
-        ...(medicalHistory !== undefined && { medicalHistory: medicalHistory ? medicalHistory.trim() : null })
+        ...(age && { age: parseInt(age) }),
+        ...(medicalHistory !== undefined && { medicalHistory: medicalHistory ? medicalHistory.trim() : null }),
+        ...(status && { status: status.trim() })
       },
       include: { user: true }
     });
@@ -163,6 +166,16 @@ export const updatePatient = async (req, res) => {
         data: { name: fullName.trim() }
       });
       updatedPatient.user.name = fullName.trim();
+    }
+
+    // Update password if provided
+    if (password && password.trim().length > 0) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const updatedUser = await prisma.user.update({
+        where: { id: patient.userId },
+        data: { password: hashedPassword }
+      });
+      updatedPatient.user = updatedUser; // Replace with fresh user data from database
     }
 
     res.json({ message: 'Patient updated successfully', patient: updatedPatient });
@@ -187,7 +200,7 @@ export const getPatientAppointments = async (req, res) => {
     const appointments = await prisma.appointment.findMany({
       where: { patientId: parseInt(id) },
       include: { therapist: true },
-      orderBy: { date: 'desc' }
+      orderBy: { appointmentDate: 'desc' }
     });
 
     res.json(appointments);
@@ -205,38 +218,47 @@ export const registerPatient = async (req, res) => {
     const { fullName, email, password, phone, age, gender } = req.body;
 
     // Validate required fields
-    if (!fullName || !email || !password || !phone || !age || !gender) {
+    if (!fullName || !email || !password || !phone || !gender) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    // Check if patient already exists
-    const existingPatient = await prisma.patient.findUnique({
+    // Check if user with email already exists
+    const existingUser = await prisma.user.findUnique({
       where: { email }
     });
 
-    if (existingPatient) {
-      return res.status(400).json({ message: 'Email already registered' });
+    if (existingUser) {
+      return res.status(409).json({ message: 'Email already registered' });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create patient
+    // Create User first (required for Patient)
+    const user = await prisma.user.create({
+      data: {
+        email: email.toLowerCase().trim(),
+        password: hashedPassword,
+        name: fullName.trim(),
+        role: 'patient'
+      }
+    });
+
+    // Create Patient linked to User
     const patient = await prisma.patient.create({
       data: {
-        fullName,
-        email,
-        password: hashedPassword,
-        phone,
-        age: parseInt(age),
-        gender
-      }
+        phone: phone.trim(),
+        gender,
+        medicalHistory: null,
+        user: { connect: { id: user.id } }
+      },
+      include: { user: true }
     });
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: patient.id, email: patient.email, role: 'patient' },
-      process.env.JWT_SECRET,
+      { id: user.id, email: user.email, role: 'patient' },
+      process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '7d' }
     );
 
@@ -245,10 +267,9 @@ export const registerPatient = async (req, res) => {
       token,
       patient: {
         id: patient.id,
-        fullName: patient.fullName,
-        email: patient.email,
+        fullName: user.name,
+        email: user.email,
         phone: patient.phone,
-        age: patient.age,
         gender: patient.gender
       }
     });
@@ -283,14 +304,12 @@ export const loginPatient = async (req, res) => {
     }
 
     // Check password
-    const bcrypt = require('bcryptjs');
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
     // Generate JWT token
-    const jwt = require('jsonwebtoken');
     const token = jwt.sign(
       { id: user.id, email: user.email, role: 'patient' },
       process.env.JWT_SECRET || 'your-secret-key',
@@ -301,7 +320,7 @@ export const loginPatient = async (req, res) => {
       message: 'Login successful',
       token,
       patient: {
-        id: user.id,
+        id: user.patient?.id,
         fullName: user.name,
         email: user.email,
         phone: user.patient?.phone,

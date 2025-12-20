@@ -13,20 +13,24 @@ export const getAllAppointments = async (req, res) => {
     if (status) where.status = status;
     if (date) {
       const dateObj = new Date(date);
-      where.date = {
-        gte: new Date(dateObj.setHours(0, 0, 0, 0)),
-        lt: new Date(dateObj.setHours(23, 59, 59, 999))
+      where.appointmentDate = {
+        gte: new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()),
+        lt: new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate() + 1)
       };
     }
 
     const appointments = await prisma.appointment.findMany({
       where,
-      include: { therapist: true, patient: true },
-      orderBy: { date: 'asc' }
+      include: { 
+        therapist: { include: { user: true } },
+        patient: { include: { user: true } }
+      },
+      orderBy: { appointmentDate: 'asc' }
     });
 
     res.json(appointments);
   } catch (error) {
+    console.error('Error fetching appointments:', error);
     res.status(500).json({ message: 'Error fetching appointments', error: error.message });
   }
 };
@@ -39,103 +43,45 @@ export const getAvailableSlots = async (req, res) => {
       return res.status(400).json({ message: 'Therapist ID and date required' });
     }
 
+    // Define available time slots (9 AM to 5 PM, 1-hour slots)
+    const slots = [
+      '09:00', '10:00', '11:00', '12:00', 
+      '13:00', '14:00', '15:00', '16:00', '17:00'
+    ];
+
     const appointmentDate = new Date(date);
-    const dayOfWeek = appointmentDate.getDay();
-
-    // Get therapist schedule for this day
-    const schedule = await prisma.therapistSchedule.findFirst({
+    
+    // Get existing appointments for this therapist on this date
+    const existingAppointments = await prisma.appointment.findMany({
       where: {
         therapistId: parseInt(therapistId),
-        dayOfWeek: dayOfWeek === 0 ? 6 : dayOfWeek - 1 // Convert JS day (0-6) to DB day (0-6, Mon-Sun)
-      }
-    });
-
-    if (!schedule) {
-      return res.json({ slots: [], message: 'No schedule for this day' });
-    }
-
-    // Check if it's a day off
-    const dayOff = await prisma.therapistDayOff.findFirst({
-      where: {
-        therapistId: parseInt(therapistId),
-        date: {
-          gte: new Date(appointmentDate.setHours(0, 0, 0, 0)),
-          lt: new Date(appointmentDate.setHours(23, 59, 59, 999))
+        appointmentDate: {
+          gte: new Date(appointmentDate.getFullYear(), appointmentDate.getMonth(), appointmentDate.getDate()),
+          lt: new Date(appointmentDate.getFullYear(), appointmentDate.getMonth(), appointmentDate.getDate() + 1)
         }
       }
     });
 
-    if (dayOff) {
-      return res.json({ slots: [], message: 'Therapist is off this day' });
-    }
+    // Get booked times
+    const bookedTimes = existingAppointments.map(apt => apt.startTime);
 
-    // Get existing appointments
-    const appointments = await prisma.appointment.findMany({
-      where: {
-        therapistId: parseInt(therapistId),
-        date: {
-          gte: new Date(appointmentDate.setHours(0, 0, 0, 0)),
-          lt: new Date(appointmentDate.setHours(23, 59, 59, 999))
-        },
-        status: 'scheduled'
-      }
-    });
+    // Filter out booked times
+    const availableSlots = slots.filter(time => !bookedTimes.includes(time));
 
-    // Get breaks
-    const breaks = await prisma.therapistBreak.findMany({
-      where: {
-        therapistId: parseInt(therapistId),
-        startTime: {
-          lte: new Date(appointmentDate.setHours(23, 59, 59, 999))
-        },
-        endTime: {
-          gte: new Date(appointmentDate.setHours(0, 0, 0, 0))
-        }
-      }
-    });
-
-    // Generate available slots
-    const slots = [];
-    const startMinutes = timeToMinutes(schedule.startTime);
-    const endMinutes = timeToMinutes(schedule.endTime);
-    const durationNum = parseInt(duration);
-
-    for (let minute = startMinutes; minute + durationNum <= endMinutes; minute += 30) {
-      const slotStart = minute;
-      const slotEnd = minute + durationNum;
-      const slotTime = String(Math.floor(minute / 60)).padStart(2, '0') + ':' + String(minute % 60).padStart(2, '0');
-
-      // Check conflicts with existing appointments
-      const hasConflict = hasTimeConflict(slotStart, slotEnd, appointments);
-      
-      // Check breaks
-      const inBreak = isTimeWithinBreak(appointmentDate, slotTime, durationNum, breaks);
-
-      if (!hasConflict && !inBreak) {
-        slots.push(slotTime);
-      }
-    }
-
-    res.json({ slots, message: 'Available slots fetched' });
+    res.json({ slots: availableSlots });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching slots', error: error.message });
+    console.error('Error fetching available slots:', error);
+    res.status(500).json({ message: 'Error fetching available slots', error: error.message });
   }
 };
 
 export const createAppointment = async (req, res) => {
   try {
-    const { therapistId, patientId, service, date, time, duration = 60 } = req.body;
+    const { therapistId, patientId, appointmentDate, startTime, endTime, status = 'pending', notes } = req.body;
 
-    if (!therapistId || !patientId || !service || !date || !time) {
-      return res.status(400).json({ message: 'All required fields must be provided' });
+    if (!therapistId || !patientId || !appointmentDate || !startTime || !endTime) {
+      return res.status(400).json({ message: 'All required fields must be provided: therapistId, patientId, appointmentDate, startTime, endTime' });
     }
-
-    if (!isValidTimeFormat(time)) {
-      return res.status(400).json({ message: 'Invalid time format. Use HH:mm' });
-    }
-
-    const appointmentDate = new Date(date);
-    const dayOfWeek = appointmentDate.getDay();
 
     // Verify therapist exists
     const therapist = await prisma.therapist.findUnique({
@@ -155,71 +101,18 @@ export const createAppointment = async (req, res) => {
       return res.status(404).json({ message: 'Patient not found' });
     }
 
-    // Check if therapist works this day
-    const schedule = await prisma.therapistSchedule.findFirst({
+    // Check for time conflicts
+    const existingAppointment = await prisma.appointment.findFirst({
       where: {
         therapistId: parseInt(therapistId),
-        dayOfWeek: dayOfWeek === 0 ? 6 : dayOfWeek - 1
+        appointmentDate: new Date(appointmentDate),
+        startTime: startTime,
+        status: { not: 'cancelled' }
       }
     });
 
-    if (!schedule) {
-      return res.status(400).json({ message: 'Therapist does not work on this day' });
-    }
-
-    // Check day off
-    const dayOff = await prisma.therapistDayOff.findFirst({
-      where: {
-        therapistId: parseInt(therapistId),
-        date: {
-          gte: new Date(appointmentDate.setHours(0, 0, 0, 0)),
-          lt: new Date(appointmentDate.setHours(23, 59, 59, 999))
-        }
-      }
-    });
-
-    if (dayOff) {
-      return res.status(400).json({ message: 'Therapist is off on this date' });
-    }
-
-    // Check working hours
-    const [hours, minutes] = time.split(':').map(Number);
-    const appointmentMinutes = hours * 60 + minutes;
-    const scheduleStart = timeToMinutes(schedule.startTime);
-    const scheduleEnd = timeToMinutes(schedule.endTime);
-    const durationNum = parseInt(duration);
-
-    if (appointmentMinutes < scheduleStart || appointmentMinutes + durationNum > scheduleEnd) {
-      return res.status(400).json({ message: 'Appointment time is outside working hours' });
-    }
-
-    // Check for breaks
-    const breaks = await prisma.therapistBreak.findMany({
-      where: {
-        therapistId: parseInt(therapistId),
-        startTime: { lte: new Date(appointmentDate.setHours(23, 59, 59, 999)) },
-        endTime: { gte: new Date(appointmentDate.setHours(0, 0, 0, 0)) }
-      }
-    });
-
-    if (isTimeWithinBreak(appointmentDate, time, durationNum, breaks)) {
-      return res.status(400).json({ message: 'Appointment time conflicts with a break' });
-    }
-
-    // Check for double booking
-    const existingAppointments = await prisma.appointment.findMany({
-      where: {
-        therapistId: parseInt(therapistId),
-        date: {
-          gte: new Date(appointmentDate.setHours(0, 0, 0, 0)),
-          lt: new Date(appointmentDate.setHours(23, 59, 59, 999))
-        },
-        status: 'scheduled'
-      }
-    });
-
-    if (hasTimeConflict(appointmentMinutes, appointmentMinutes + durationNum, existingAppointments)) {
-      return res.status(400).json({ message: 'Time slot is already booked' });
+    if (existingAppointment) {
+      return res.status(409).json({ message: 'Time slot is already booked' });
     }
 
     // Create appointment
@@ -227,16 +120,21 @@ export const createAppointment = async (req, res) => {
       data: {
         therapistId: parseInt(therapistId),
         patientId: parseInt(patientId),
-        service,
-        date: appointmentDate,
-        time,
-        duration: durationNum
+        appointmentDate: new Date(appointmentDate),
+        startTime,
+        endTime,
+        status,
+        notes: notes || null
       },
-      include: { therapist: true, patient: true }
+      include: {
+        therapist: { include: { user: true } },
+        patient: { include: { user: true } }
+      }
     });
 
-    res.status(201).json({ message: 'Appointment created', appointment });
+    res.status(201).json({ message: 'Appointment created successfully', appointment });
   } catch (error) {
+    console.error('Error creating appointment:', error);
     res.status(500).json({ message: 'Error creating appointment', error: error.message });
   }
 };
@@ -244,21 +142,26 @@ export const createAppointment = async (req, res) => {
 export const updateAppointment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { date, time, status, service } = req.body;
+    const { startTime, endTime, status, appointmentDate, notes } = req.body;
 
     const appointment = await prisma.appointment.update({
       where: { id: parseInt(id) },
       data: {
-        ...(date && { date: new Date(date) }),
-        ...(time && { time }),
-        ...(status && { status }),
-        ...(service && { service })
+        ...(appointmentDate && { appointmentDate: new Date(appointmentDate) }),
+        ...(startTime && { startTime }),
+        ...(endTime && { endTime }),
+        ...(status && { status: status.trim() }),
+        ...(notes !== undefined && { notes })
       },
-      include: { therapist: true, patient: true }
+      include: { 
+        therapist: { include: { user: true } },
+        patient: { include: { user: true } }
+      }
     });
 
-    res.json({ message: 'Appointment updated', appointment });
+    res.json(appointment);
   } catch (error) {
+    console.error('Error updating appointment:', error);
     res.status(500).json({ message: 'Error updating appointment', error: error.message });
   }
 };
@@ -270,11 +173,15 @@ export const cancelAppointment = async (req, res) => {
     const appointment = await prisma.appointment.update({
       where: { id: parseInt(id) },
       data: { status: 'cancelled' },
-      include: { therapist: true, patient: true }
+      include: { 
+        therapist: { include: { user: true } },
+        patient: { include: { user: true } }
+      }
     });
 
     res.json({ message: 'Appointment cancelled', appointment });
   } catch (error) {
+    console.error('Error cancelling appointment:', error);
     res.status(500).json({ message: 'Error cancelling appointment', error: error.message });
   }
 };
@@ -285,6 +192,7 @@ export const deleteAppointment = async (req, res) => {
     await prisma.appointment.delete({ where: { id: parseInt(id) } });
     res.json({ message: 'Appointment deleted' });
   } catch (error) {
+    console.error('Error deleting appointment:', error);
     res.status(500).json({ message: 'Error deleting appointment', error: error.message });
   }
 };

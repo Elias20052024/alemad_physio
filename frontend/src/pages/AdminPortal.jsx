@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Container, Box, Typography, Card, CardContent, Grid, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, MenuItem, IconButton, InputAdornment, Menu, Avatar, Select, useTheme } from '@mui/material';
+import { Container, Box, Typography, Card, CardContent, Grid, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, MenuItem, IconButton, InputAdornment, Menu, Avatar, Select, useTheme, FormControl, InputLabel } from '@mui/material';
 import { LogoutSharp, Edit, Delete, Add as AddIcon, Visibility, VisibilityOff, MoreVert } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
@@ -8,11 +8,93 @@ import { therapistService, patientService } from '@services/apiService.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
+// Helper functions for date conversion
+const formatDateForInput = (dateString) => {
+  if (!dateString) return '';
+  
+  // If already in yyyy-MM-dd format, return as-is
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+  
+  // Convert from MM/DD/YYYY or other date formats
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch (e) {
+    return '';
+  }
+};
+
+const formatDateForDisplay = (dateString) => {
+  if (!dateString) return '';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return date.toLocaleDateString();
+  } catch (e) {
+    return dateString;
+  }
+};
+
+// Specialty options for therapists
+const specialtyOptions = [
+  { value: 'Physical Therapy', label: 'Physical Therapy' },
+  { value: 'Occupational Therapy', label: 'Occupational Therapy' },
+  { value: 'Speech Therapy', label: 'Speech Therapy' },
+  { value: 'Orthopedic Rehabilitation', label: 'Orthopedic Rehabilitation' },
+  { value: 'Pediatric Physical Therapy', label: 'Pediatric Physical Therapy' },
+  { value: 'Neuromuscular Therapy', label: 'Neuromuscular Therapy' },
+  { value: 'Sports Medicine', label: 'Sports Medicine' },
+  { value: 'Cardiopulmonary Rehabilitation', label: 'Cardiopulmonary Rehabilitation' }
+];
+
 const AdminPortal = () => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const theme = useTheme();
   const token = localStorage.getItem('token');
+
+  // Status color mapping
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'active':
+        return '#4caf50'; // Green
+      case 'inactive':
+        return '#f44336'; // Red
+      case 'pending':
+        return '#ff9800'; // Orange
+      case 'completed':
+        return '#2196f3'; // Blue
+      case 'scheduled':
+        return '#4caf50'; // Green
+      case 'cancelled':
+        return '#9c27b0'; // Purple
+      default:
+        return '#9e9e9e'; // Grey
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    switch(status) {
+      case 'active':
+        return language === 'ar' ? 'نشط' : 'Active';
+      case 'inactive':
+        return language === 'ar' ? 'غير نشط' : 'Inactive';
+      case 'pending':
+        return language === 'ar' ? 'قيد الانتظار' : 'Pending';
+      case 'completed':
+        return language === 'ar' ? 'مكتمل' : 'Completed';
+      default:
+        return status;
+    }
+  };
   const adminName = localStorage.getItem('userName') || 'Admin';
   const [tabValue, setTabValue] = useState(0);
   const [profileMenuAnchor, setProfileMenuAnchor] = useState(null);
@@ -35,18 +117,87 @@ const AdminPortal = () => {
 
   const [patients, setPatients] = useState([]);
 
+  // Function to refresh all data from API
+  const refreshAllData = async () => {
+    try {
+      console.log('🔄 Refreshing all data...');
+      
+      // Fetch patients
+      const patientsResponse = await patientService.getAllPatients();
+      const patientsData = patientsResponse.data || patientsResponse || [];
+      const mappedPatients = Array.isArray(patientsData) ? patientsData.map(p => ({
+        ...p,
+        fullName: p.user?.name || p.fullName || 'Unknown'
+      })) : [];
+      console.log('📊 Refreshed patients:', mappedPatients);
+      setPatients(mappedPatients);
+
+      // Fetch therapists
+      const therapistsResponse = await therapistService.getAllTherapists();
+      const therapistsData = therapistsResponse.data || therapistsResponse || [];
+      const mappedTherapists = Array.isArray(therapistsData) ? therapistsData.map(t => ({
+        ...t,
+        name: t.user?.name || t.name || 'Unknown'
+      })) : [];
+      console.log('👨‍⚕️ Refreshed therapists:', mappedTherapists);
+      setTherapists(mappedTherapists);
+
+      // Fetch admins
+      const adminsResponse = await axios.get(`${API_BASE_URL}/admin/list`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log('🔐 Refreshed admins:', adminsResponse.data);
+      setAdmins(adminsResponse.data || []);
+
+      // Fetch appointments
+      const appointmentsResponse = await axios.get(`${API_BASE_URL}/appointments`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const formattedAppointments = (appointmentsResponse.data || []).map(apt => ({
+        id: apt.id,
+        patientName: apt.patient?.user?.name || apt.patient?.fullName || 'Unknown',
+        therapistName: apt.therapist?.user?.name || apt.therapist?.name || 'Unknown',
+        date: apt.appointmentDate ? new Date(apt.appointmentDate).toLocaleDateString() : 'N/A',
+        time: apt.startTime || 'N/A',
+        status: apt.status || 'pending',
+        ...apt
+      }));
+      console.log('📅 Refreshed appointments:', formattedAppointments);
+      setAppointments(formattedAppointments);
+      
+      console.log('✅ All data refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    }
+  };
+
   useEffect(() => {
     const fetchAllData = async () => {
       try {
         // Fetch patients
         const patientsResponse = await patientService.getAllPatients();
-        console.log('📊 Fetched patients from API:', patientsResponse.data);
-        setPatients(patientsResponse.data || []);
+        console.log('📊 Fetched patients from API:', patientsResponse);
+        const patientsData = patientsResponse.data || patientsResponse || [];
+        console.log('📊 Patients data to set:', patientsData);
+        const mappedPatients = Array.isArray(patientsData) ? patientsData.map(p => ({
+          ...p,
+          fullName: p.user?.name || p.fullName || 'Unknown'
+        })) : [];
+        console.log('📊 Mapped patients:', mappedPatients);
+        setPatients(mappedPatients);
 
         // Fetch therapists
         const therapistsResponse = await therapistService.getAllTherapists();
-        console.log('👨‍⚕️ Fetched therapists from API:', therapistsResponse.data);
-        setTherapists(therapistsResponse.data || []);
+        console.log('👨‍⚕️ Fetched therapists from API:', therapistsResponse);
+        const therapistsData = therapistsResponse.data || therapistsResponse || [];
+        console.log('👨‍⚕️ Therapists data to set:', therapistsData);
+        const mappedTherapists = Array.isArray(therapistsData) ? therapistsData.map(t => ({
+          ...t,
+          name: t.user?.name || t.name || 'Unknown'
+        })) : [];
+        console.log('👨‍⚕️ Mapped therapists:', mappedTherapists);
+        setTherapists(mappedTherapists);
 
         // Fetch admins (using API call)
         const adminsResponse = await axios.get(`${API_BASE_URL}/admin/list`, {
@@ -54,6 +205,30 @@ const AdminPortal = () => {
         });
         console.log('👤 Fetched admins from API:', adminsResponse.data);
         setAdmins(adminsResponse.data || []);
+
+        // Fetch appointments
+        try {
+          const appointmentsResponse = await axios.get(`${API_BASE_URL}/appointments`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          console.log('📅 Fetched appointments from API:', appointmentsResponse.data);
+          
+          // Format appointments to include patient and therapist names
+          const formattedAppointments = (appointmentsResponse.data || []).map(apt => ({
+            id: apt.id,
+            patientName: apt.patient?.user?.name || apt.patient?.fullName || 'Unknown',
+            therapistName: apt.therapist?.user?.name || apt.therapist?.name || 'Unknown',
+            date: apt.appointmentDate ? new Date(apt.appointmentDate).toLocaleDateString() : 'N/A',
+            time: apt.startTime || 'N/A',
+            status: (apt.status || 'pending').trim(),
+            ...apt
+          }));
+          
+          setAppointments(formattedAppointments);
+        } catch (error) {
+          console.error('Error fetching appointments:', error);
+          setAppointments([]);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
         setPatients([]);
@@ -76,7 +251,7 @@ const AdminPortal = () => {
   const [dialogType, setDialogType] = useState(''); // 'therapist' or 'patient'
   const [formData, setFormData] = useState({});
   const [editingId, setEditingId] = useState(null);
-  const [showAddPassword, setShowAddPassword] = useState(false);
+  const [showAddPassword, setShowAddPassword] = useState(true);
   const [showEditPassword, setShowEditPassword] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -103,24 +278,23 @@ const AdminPortal = () => {
         service: booking.service,
         phone: booking.phone,
         message: booking.message,
-        status: booking.status || 'pending',
+        status: (booking.status || 'pending').trim(),
         type: 'patient-booking'
       }));
       
-      // Get admin-created appointments from current state (only non-booking appointments)
-      const adminAppointments = appointments.filter(app => app.type !== 'patient-booking');
-      
-      // Combine and update
-      setAppointments([...adminAppointments, ...convertedBookings]);
+      // Get admin-created appointments from API (we'll fetch these separately)
+      // Don't override here, just combine with patient bookings
+      if (appointments.length > 0) {
+        const adminAppointments = appointments.filter(app => app.type !== 'patient-booking');
+        setAppointments([...adminAppointments, ...convertedBookings]);
+      } else {
+        setAppointments(convertedBookings);
+      }
     };
 
-    // Set up interval to check for new bookings every 2 seconds
-    const interval = setInterval(loadPatientBookings, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleOpenAddDialog = (type) => {
+    // Load patient bookings once on mount
+    loadPatientBookings();
+  }, []);  const handleOpenAddDialog = (type) => {
     setDialogType(type);
     if (type === 'therapist') {
       setFormData({ name: '', specialty: '', email: '', phone: '', password: '' });
@@ -143,7 +317,40 @@ const AdminPortal = () => {
   const handleOpenEditDialog = (type, item) => {
     setDialogType(type);
     setEditingId(item.id);
-    setFormData(item);
+    
+    // Map the item data to formData structure based on type
+    let mappedData = {};
+    if (type === 'patient') {
+      mappedData = {
+        fullName: item.user?.name || '',
+        phone: item.phone || '',
+        gender: item.gender || '',
+        medicalHistory: item.medicalHistory || '',
+        email: item.user?.email || ''
+      };
+    } else if (type === 'therapist') {
+      mappedData = {
+        name: item.user?.name || item.name || '',
+        email: item.user?.email || item.email || '',
+        phone: item.phone || '',
+        specialty: item.specialization || item.specialty || '',
+        password: ''
+      };
+    } else if (type === 'admin') {
+      mappedData = {
+        name: item.user?.name || item.name || '',
+        email: item.user?.email || item.email || '',
+        password: ''
+      };
+    } else if (type === 'appointment') {
+      // Convert date format for appointment edit dialog
+      mappedData = {
+        ...item,
+        date: formatDateForInput(item.date || item.appointmentDate)
+      };
+    }
+    
+    setFormData(mappedData);
     setEditDialogOpen(true);
   };
 
@@ -324,62 +531,72 @@ const AdminPortal = () => {
   const handleEditSubmit = async () => {
     try {
       if (dialogType === 'therapist') {
-        const response = await axios.put(`${API_BASE_URL}/therapists/${editingId}`, formData, {
+        const therapistData = {
+          name: formData.name || undefined,
+          specialty: formData.specialty || undefined,
+          email: formData.email || undefined,
+          phone: formData.phone || undefined,
+          password: formData.password || undefined
+        };
+        
+        // Remove undefined fields
+        Object.keys(therapistData).forEach(key => therapistData[key] === undefined && delete therapistData[key]);
+        
+        console.log('Sending therapist update:', { id: editingId, data: therapistData });
+        
+        const response = await axios.put(`${API_BASE_URL}/therapists/${editingId}`, therapistData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setTherapists(therapists.map(t => t.id === editingId ? response.data : t));
+        
+        console.log('Therapist update response:', response.data);
+        
         setSnackbar({ open: true, message: 'Therapist updated successfully!', severity: 'success' });
+        handleCloseEditDialog();
+        await refreshAllData();
       } else if (dialogType === 'patient') {
         const patientData = {
-          fullName: formData.fullName,
-          phone: formData.phone,
-          gender: formData.gender,
-          email: formData.email,
-          password: formData.password
+          fullName: formData.fullName || undefined,
+          phone: formData.phone || undefined,
+          gender: formData.gender || undefined,
+          medicalHistory: formData.medicalHistory || undefined,
+          password: formData.password || undefined
         };
+        
+        // Remove undefined fields
+        Object.keys(patientData).forEach(key => patientData[key] === undefined && delete patientData[key]);
+        
         const response = await axios.put(`${API_BASE_URL}/patients/${editingId}`, patientData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setPatients(patients.map(p => p.id === editingId ? response.data : p));
+        
         setSnackbar({ open: true, message: 'Patient updated successfully!', severity: 'success' });
+        handleCloseEditDialog();
+        await refreshAllData();
       } else if (dialogType === 'appointment') {
-        // Check for time conflict (excluding current appointment being edited)
-        if (checkTimeConflict(formData.therapistName, formData.date, formData.time, editingId)) {
-          const availableTimes = getAvailableTimesForTherapist(formData.therapistName, formData.date, editingId);
-          
-          if (availableTimes.length === 0) {
-            setSnackbar({
-              open: true,
-              message: language === 'ar'
-                ? 'المعالج غير متاح في هذا التاريخ. يرجى اختيار تاريخ آخر.'
-                : 'The therapist is fully booked on this date. Please choose another date.',
-              severity: 'error',
-            });
-            return;
-          } else {
-            setSnackbar({
-              open: true,
-              message: language === 'ar'
-                ? `هذا الوقت محجوز! الأوقات المتاحة: ${availableTimes.join(', ')}`
-                : `This time is booked! Available times: ${availableTimes.join(', ')}`,
-              severity: 'warning',
-            });
-            return;
-          }
-        }
-        const response = await axios.put(`${API_BASE_URL}/appointments/${editingId}`, formData, {
+        // Create appointment data with IDs
+        const appointmentData = {
+          therapistId: parseInt(formData.therapistId),
+          patientId: parseInt(formData.patientId),
+          appointmentDate: formData.date,
+          startTime: formData.time,
+          endTime: formData.time,
+          service: formData.service || 'General'
+        };
+
+        const response = await axios.put(`${API_BASE_URL}/appointments/${editingId}`, appointmentData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setAppointments(appointments.map(a => a.id === editingId ? response.data : a));
         setSnackbar({ open: true, message: 'Appointment updated successfully!', severity: 'success' });
+        handleCloseEditDialog();
+        await refreshAllData();
       } else if (dialogType === 'admin') {
         const response = await axios.put(`${API_BASE_URL}/admin/${editingId}`, formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setAdmins(admins.map(a => a.id === editingId ? response.data : a));
         setSnackbar({ open: true, message: 'Admin updated successfully!', severity: 'success' });
+        handleCloseEditDialog();
+        await refreshAllData();
       }
-      handleCloseEditDialog();
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'An error occurred. Please try again.';
       setSnackbar({ open: true, message: errorMessage, severity: 'error' });
@@ -391,11 +608,9 @@ const AdminPortal = () => {
     try {
       if (dialogType === 'therapist') {
         // Add therapist via API
-        const response = await axios.post(`${API_BASE_URL}/therapists`, formData, {
+        await axios.post(`${API_BASE_URL}/therapists`, formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const newTherapist = response.data;
-        setTherapists([...therapists, newTherapist]);
         setSnackbar({
           open: true,
           message: 'Therapist added successfully!',
@@ -410,48 +625,32 @@ const AdminPortal = () => {
           email: formData.email,
           password: formData.password
         };
-        const response = await axios.post(`${API_BASE_URL}/patients`, patientData, {
+        await axios.post(`${API_BASE_URL}/patients`, patientData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const newPatient = response.data.patient || response.data;
-        setPatients([...patients, newPatient]);
         setSnackbar({
           open: true,
           message: 'Patient added successfully!',
           severity: 'success',
         });
       } else if (dialogType === 'appointment') {
-        // Check for time conflict
-        if (checkTimeConflict(formData.therapistName, formData.date, formData.time)) {
-          const availableTimes = getAvailableTimesForTherapist(formData.therapistName, formData.date);
-          
-          if (availableTimes.length === 0) {
-            setSnackbar({
-              open: true,
-              message: language === 'ar' 
-                ? 'المعالج غير متاح في هذا التاريخ. يرجى اختيار تاريخ آخر.'
-                : 'The therapist is fully booked on this date. Please choose another date.',
-              severity: 'error',
-            });
-            return;
-          } else {
-            setSnackbar({
-              open: true,
-              message: language === 'ar'
-                ? `هذا الوقت محجوز! الأوقات المتاحة: ${availableTimes.join(', ')}`
-                : `This time is booked! Available times: ${availableTimes.join(', ')}`,
-              severity: 'warning',
-            });
-            return;
-          }
-        }
+        // Create appointment data with IDs
+        const appointmentData = {
+          therapistId: parseInt(formData.therapistId),
+          patientId: parseInt(formData.patientId),
+          appointmentDate: formData.date,
+          startTime: formData.time,
+          endTime: formData.time, // Set end time same as start time for now
+          service: formData.service || 'General'
+        };
+
+        console.log('Sending appointment data:', appointmentData);
 
         // Add appointment via API
-        const response = await axios.post(`${API_BASE_URL}/appointments`, formData, {
+        await axios.post(`${API_BASE_URL}/appointments`, appointmentData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const newAppointment = response.data;
-        setAppointments([...appointments, newAppointment]);
+        
         setSnackbar({
           open: true,
           message: 'Appointment scheduled successfully!',
@@ -459,11 +658,9 @@ const AdminPortal = () => {
         });
       } else if (dialogType === 'admin') {
         // Add admin via API
-        const response = await axios.post(`${API_BASE_URL}/admin/register`, formData, {
+        await axios.post(`${API_BASE_URL}/admin/register`, formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const newAdmin = response.data;
-        setAdmins([...admins, newAdmin]);
         setSnackbar({
           open: true,
           message: 'Admin added successfully!',
@@ -471,6 +668,7 @@ const AdminPortal = () => {
         });
       }
       handleCloseAddDialog();
+      await refreshAllData();
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'An error occurred. Please try again.';
       setSnackbar({
@@ -495,7 +693,9 @@ const AdminPortal = () => {
         const response = await axios.put(`${API_BASE_URL}/therapists/${id}`, { status: newStatus }, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setTherapists(therapists.map(t => t.id === id ? response.data : t));
+        // Find the existing therapist and merge with response
+        const updatedTherapist = therapists.find(t => t.id === id);
+        setTherapists(therapists.map(t => t.id === id ? { ...updatedTherapist, status: newStatus, ...response.data } : t));
         setSnackbar({
           open: true,
           message: `Therapist status changed to ${newStatus}!`,
@@ -505,7 +705,9 @@ const AdminPortal = () => {
         const response = await axios.put(`${API_BASE_URL}/patients/${id}`, { status: newStatus }, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setPatients(patients.map(p => p.id === id ? response.data : p));
+        // Find the existing patient and merge with response
+        const updatedPatient = patients.find(p => p.id === id);
+        setPatients(patients.map(p => p.id === id ? { ...updatedPatient, status: newStatus, ...response.data } : p));
         setSnackbar({
           open: true,
           message: `Patient status changed to ${newStatus}!`,
@@ -515,10 +717,24 @@ const AdminPortal = () => {
         const response = await axios.put(`${API_BASE_URL}/admins/${id}`, { status: newStatus }, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setAdmins(admins.map(a => a.id === id ? response.data : a));
+        // Find the existing admin and merge with response
+        const updatedAdmin = admins.find(a => a.id === id);
+        setAdmins(admins.map(a => a.id === id ? { ...updatedAdmin, status: newStatus, ...response.data } : a));
         setSnackbar({
           open: true,
           message: `Admin status changed to ${newStatus}!`,
+          severity: 'success',
+        });
+      } else if (type === 'appointment') {
+        const response = await axios.put(`${API_BASE_URL}/appointments/${id}`, { status: newStatus }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        // Find the existing appointment and merge with response
+        const updatedAppointment = appointments.find(a => a.id === id);
+        setAppointments(appointments.map(a => a.id === id ? { ...updatedAppointment, status: newStatus, ...response.data } : a));
+        setSnackbar({
+          open: true,
+          message: `Appointment status changed to ${newStatus}!`,
           severity: 'success',
         });
       }
@@ -530,10 +746,6 @@ const AdminPortal = () => {
       });
       console.error('Error updating status:', error);
     }
-  };
-
-  const getStatusColor = (status) => {
-    return status === 'active' ? 'success' : 'error';
   };
 
   return (
@@ -750,10 +962,26 @@ const AdminPortal = () => {
                       value={patient.status || 'active'}
                       onChange={(e) => handleStatusChange('patient', patient.id, e.target.value)}
                       size="small"
-                      sx={{ minWidth: 100 }}
+                      sx={{ 
+                        minWidth: 100,
+                        backgroundColor: getStatusColor(patient.status || 'active'),
+                        color: 'white',
+                        fontWeight: 'bold',
+                        borderRadius: '4px',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: 'none'
+                        },
+                        '& .MuiSvgIcon-root': {
+                          color: 'white'
+                        }
+                      }}
                     >
-                      <MenuItem value="active">{language === 'ar' ? 'نشط' : 'Active'}</MenuItem>
-                      <MenuItem value="inactive">{language === 'ar' ? 'غير نشط' : 'Inactive'}</MenuItem>
+                      <MenuItem value="active" sx={{ backgroundColor: '#4caf50', color: 'white' }}>
+                        {language === 'ar' ? 'نشط' : 'Active'}
+                      </MenuItem>
+                      <MenuItem value="inactive" sx={{ backgroundColor: '#f44336', color: 'white' }}>
+                        {language === 'ar' ? 'غير نشط' : 'Inactive'}
+                      </MenuItem>
                     </Select>
                   </TableCell>
                   <TableCell>
@@ -808,16 +1036,37 @@ const AdminPortal = () => {
                 }}>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.name}</TableCell>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.email}</TableCell>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.specialty}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.specialization || therapist.specialty || 'N/A'}</TableCell>
                   <TableCell>
                     <Select
-                      value={therapist.status}
+                      value={therapist.status || 'active'}
                       onChange={(e) => handleStatusChange('therapist', therapist.id, e.target.value)}
                       size="small"
-                      sx={{ minWidth: 100 }}
+                      sx={{ 
+                        minWidth: 100,
+                        backgroundColor: getStatusColor(therapist.status || 'active'),
+                        color: 'white',
+                        fontWeight: 'bold',
+                        borderRadius: '4px',
+                        padding: '6px 12px',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: 'none'
+                        },
+                        '& .MuiSvgIcon-root': {
+                          color: 'white'
+                        },
+                        '&:hover': {
+                          backgroundColor: getStatusColor(therapist.status || 'active'),
+                          opacity: 0.9
+                        }
+                      }}
                     >
-                      <MenuItem value="active">{language === 'ar' ? 'نشط' : 'Active'}</MenuItem>
-                      <MenuItem value="inactive">{language === 'ar' ? 'غير نشط' : 'Inactive'}</MenuItem>
+                      <MenuItem value="active" sx={{ backgroundColor: '#4caf50', color: 'white', '&:hover': { backgroundColor: '#45a049' } }}>
+                        {language === 'ar' ? 'نشط' : 'Active'}
+                      </MenuItem>
+                      <MenuItem value="inactive" sx={{ backgroundColor: '#f44336', color: 'white', '&:hover': { backgroundColor: '#da190b' } }}>
+                        {language === 'ar' ? 'غير نشط' : 'Inactive'}
+                      </MenuItem>
                     </Select>
                   </TableCell>
                   <TableCell>
@@ -867,25 +1116,75 @@ const AdminPortal = () => {
             </TableHead>
             <TableBody>
               {appointments.map((appointment, index) => (
-                <TableRow key={appointment.id} hover sx={{ 
-                  backgroundColor: theme.palette.mode === 'dark' 
-                    ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
-                    : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'), 
+                <TableRow key={`${appointment.id}-${appointment.type || 'admin'}`} hover sx={{ 
+                  backgroundColor: appointment.status === 'cancelled' 
+                    ? (theme.palette.mode === 'dark' ? '#4a2a2a' : '#ffe6e6')
+                    : (theme.palette.mode === 'dark' 
+                        ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
+                        : (index % 2 === 0 ? '#ffffff' : '#f9f9f9')),
+                  opacity: appointment.status === 'cancelled' ? 0.7 : 1,
                   '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' } 
                 }}>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{appointment.patientName}</TableCell>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{appointment.therapistName}</TableCell>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{appointment.date}</TableCell>
+                  <TableCell sx={{ 
+                    color: appointment.status === 'cancelled' ? '#999' : (theme.palette.mode === 'dark' ? '#e0e0e0' : '#333'), 
+                    padding: '14px',
+                    textDecoration: appointment.status === 'cancelled' ? 'line-through' : 'none'
+                  }}>{appointment.patientName}</TableCell>
+                  <TableCell sx={{ 
+                    color: appointment.status === 'cancelled' ? '#999' : (theme.palette.mode === 'dark' ? '#e0e0e0' : '#333'), 
+                    padding: '14px',
+                    textDecoration: appointment.status === 'cancelled' ? 'line-through' : 'none'
+                  }}>{appointment.therapistName}</TableCell>
+                  <TableCell sx={{ 
+                    color: appointment.status === 'cancelled' ? '#999' : (theme.palette.mode === 'dark' ? '#e0e0e0' : '#333'), 
+                    padding: '14px',
+                    textDecoration: appointment.status === 'cancelled' ? 'line-through' : 'none'
+                  }}>{appointment.date}</TableCell>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{appointment.time}</TableCell>
                   <TableCell>
-                    <Chip 
-                      label={appointment.status} 
-                      color={
-                        appointment.status === 'pending' ? 'warning' :
-                        appointment.status === 'scheduled' ? 'primary' : 'success'
-                      }
-                      size="small"
-                    />
+                    {(() => {
+                      const statusValue = (appointment.status || 'pending').trim();
+                      const validStatuses = ['pending', 'scheduled', 'completed', 'cancelled'];
+                      const safeStatus = validStatuses.includes(statusValue) ? statusValue : 'pending';
+                      return (
+                        <Select
+                          value={safeStatus}
+                          onChange={(e) => handleStatusChange('appointment', appointment.id, e.target.value)}
+                          size="small"
+                          sx={{ 
+                            minWidth: 100,
+                            backgroundColor: getStatusColor(safeStatus),
+                            color: 'white',
+                            fontWeight: 'bold',
+                            borderRadius: '4px',
+                            padding: '6px 12px',
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              border: 'none'
+                            },
+                            '& .MuiSvgIcon-root': {
+                              color: 'white'
+                            },
+                            '&:hover': {
+                              backgroundColor: getStatusColor(safeStatus),
+                              opacity: 0.9
+                            }
+                          }}
+                        >
+                          <MenuItem value="pending" sx={{ backgroundColor: '#ff9800', color: 'white', '&:hover': { backgroundColor: '#e68900' } }}>
+                            {language === 'ar' ? 'قيد الانتظار' : 'Pending'}
+                          </MenuItem>
+                          <MenuItem value="scheduled" sx={{ backgroundColor: '#4caf50', color: 'white', '&:hover': { backgroundColor: '#45a049' } }}>
+                            {language === 'ar' ? 'مجدول' : 'Scheduled'}
+                          </MenuItem>
+                          <MenuItem value="completed" sx={{ backgroundColor: '#2196f3', color: 'white', '&:hover': { backgroundColor: '#0b7dda' } }}>
+                            {language === 'ar' ? 'مكتمل' : 'Completed'}
+                          </MenuItem>
+                          <MenuItem value="cancelled" sx={{ backgroundColor: '#9c27b0', color: 'white', '&:hover': { backgroundColor: '#7b1fa2' } }}>
+                            {language === 'ar' ? 'ملغي' : 'Cancelled'}
+                          </MenuItem>
+                        </Select>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
                     <Button size="small" startIcon={<Edit />} sx={{ mr: 1, color: '#1C6FB5' }} onClick={() => handleOpenEditDialog('appointment', appointment)}>
@@ -942,13 +1241,29 @@ const AdminPortal = () => {
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{admin.role}</TableCell>
                   <TableCell>
                     <Select
-                      value={admin.status}
+                      value={admin.status || 'active'}
                       onChange={(e) => handleStatusChange('admin', admin.id, e.target.value)}
                       size="small"
-                      sx={{ minWidth: 100 }}
+                      sx={{ 
+                        minWidth: 100,
+                        backgroundColor: getStatusColor(admin.status || 'active'),
+                        color: 'white',
+                        fontWeight: 'bold',
+                        borderRadius: '4px',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: 'none'
+                        },
+                        '& .MuiSvgIcon-root': {
+                          color: 'white'
+                        }
+                      }}
                     >
-                      <MenuItem value="active">{language === 'ar' ? 'نشط' : 'Active'}</MenuItem>
-                      <MenuItem value="inactive">{language === 'ar' ? 'غير نشط' : 'Inactive'}</MenuItem>
+                      <MenuItem value="active" sx={{ backgroundColor: '#4caf50', color: 'white' }}>
+                        {language === 'ar' ? 'نشط' : 'Active'}
+                      </MenuItem>
+                      <MenuItem value="inactive" sx={{ backgroundColor: '#f44336', color: 'white' }}>
+                        {language === 'ar' ? 'غير نشط' : 'Inactive'}
+                      </MenuItem>
                     </Select>
                   </TableCell>
                   <TableCell>
@@ -989,14 +1304,24 @@ const AdminPortal = () => {
                 margin="normal"
                 required
               />
-              <TextField
-                fullWidth
-                label={language === 'ar' ? 'التخصص' : 'Specialty'}
-                value={formData.specialty || ''}
-                onChange={(e) => setFormData({ ...formData, specialty: e.target.value })}
-                margin="normal"
-                required
-              />
+              <FormControl fullWidth margin="normal">
+                <InputLabel>{language === 'ar' ? 'التخصص' : 'Specialty'}</InputLabel>
+                <Select
+                  value={formData.specialty || ''}
+                  onChange={(e) => setFormData({ ...formData, specialty: e.target.value })}
+                  label={language === 'ar' ? 'التخصص' : 'Specialty'}
+                  required
+                >
+                  <MenuItem value="">
+                    <em>{language === 'ar' ? 'اختر التخصص' : 'Select Specialty'}</em>
+                  </MenuItem>
+                  {specialtyOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
               <TextField
                 fullWidth
                 label={language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
@@ -1079,12 +1404,22 @@ const AdminPortal = () => {
               </TextField>
               <TextField
                 fullWidth
+                type="number"
+                label={language === 'ar' ? 'العمر' : 'Age'}
+                value={formData.age || ''}
+                onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                margin="normal"
+                inputProps={{ min: '0', max: '120' }}
+              />
+              <TextField
+                fullWidth
                 label={language === 'ar' ? 'كلمة المرور' : 'Password'}
                 type={showAddPassword ? 'text' : 'password'}
                 value={formData.password || ''}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 margin="normal"
-                required
+                required={!editingId}
+                placeholder={editingId ? language === 'ar' ? 'اترك فارغاً للاحتفاظ بكلمة المرور الحالية' : 'Leave blank to keep current password' : ''}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -1161,31 +1496,41 @@ const AdminPortal = () => {
                 fullWidth
                 select
                 label={language === 'ar' ? 'اسم المريض' : 'Patient Name'}
-                value={formData.patientName || ''}
-                onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                value={formData.patientId || ''}
+                onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}
                 margin="normal"
                 required
               >
-                {patients.map((p) => (
-                  <MenuItem key={p.id} value={p.fullName}>
-                    {p.fullName}
-                  </MenuItem>
-                ))}
+                <option value="">Select Patient</option>
+                {patients && patients.length > 0 ? (
+                  patients.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.fullName}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No patients available</option>
+                )}
               </TextField>
               <TextField
                 fullWidth
                 select
                 label={language === 'ar' ? 'اسم المعالج' : 'Therapist Name'}
-                value={formData.therapistName || ''}
-                onChange={(e) => setFormData({ ...formData, therapistName: e.target.value })}
+                value={formData.therapistId || ''}
+                onChange={(e) => setFormData({ ...formData, therapistId: e.target.value })}
                 margin="normal"
                 required
               >
-                {therapists.map((t) => (
-                  <MenuItem key={t.id} value={t.name}>
-                    {t.name}
-                  </MenuItem>
-                ))}
+                <option value="">Select Therapist</option>
+                {therapists && therapists.length > 0 ? (
+                  therapists.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No therapists available</option>
+                )}
               </TextField>
               <TextField
                 fullWidth
@@ -1243,14 +1588,24 @@ const AdminPortal = () => {
                 margin="normal"
                 required
               />
-              <TextField
-                fullWidth
-                label={language === 'ar' ? 'التخصص' : 'Specialty'}
-                value={formData.specialty || ''}
-                onChange={(e) => setFormData({ ...formData, specialty: e.target.value })}
-                margin="normal"
-                required
-              />
+              <FormControl fullWidth margin="normal">
+                <InputLabel>{language === 'ar' ? 'التخصص' : 'Specialty'}</InputLabel>
+                <Select
+                  value={formData.specialty || ''}
+                  onChange={(e) => setFormData({ ...formData, specialty: e.target.value })}
+                  label={language === 'ar' ? 'التخصص' : 'Specialty'}
+                  required
+                >
+                  <MenuItem value="">
+                    <em>{language === 'ar' ? 'اختر التخصص' : 'Select Specialty'}</em>
+                  </MenuItem>
+                  {specialtyOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
               <TextField
                 fullWidth
                 label={language === 'ar' ? 'البريد الإلكتروني' : 'Email'}

@@ -7,30 +7,12 @@ export const getAllTherapists = async (req, res) => {
   try {
     const therapists = await prisma.therapist.findMany({
       include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true
-          }
-        },
-        schedules: true,
-        breaks: true,
-        daysOff: true
+        user: true,
+        appointments: true
       }
     });
 
-    // Format response to include user info
-    const formattedTherapists = therapists.map(therapist => ({
-      id: therapist.user.id,
-      name: therapist.user.name,
-      email: therapist.user.email,
-      specialty: therapist.specialization,
-      status: 'active'
-    }));
-
-    res.json(formattedTherapists);
+    res.json(therapists);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching therapists', error: error.message });
   }
@@ -42,9 +24,7 @@ export const getTherapistById = async (req, res) => {
     const therapist = await prisma.therapist.findUnique({
       where: { id: parseInt(id) },
       include: {
-        schedules: true,
-        breaks: true,
-        daysOff: true,
+        user: true,
         appointments: {
           include: { patient: true }
         }
@@ -111,7 +91,17 @@ export const createTherapist = async (req, res) => {
 export const updateTherapist = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, specialty, email, phone, status } = req.body;
+    const { name, specialty, email, phone, password, status } = req.body;
+
+    // Get the therapist with user info
+    const therapist = await prisma.therapist.findUnique({
+      where: { id: parseInt(id) },
+      include: { user: true }
+    });
+
+    if (!therapist) {
+      return res.status(404).json({ message: 'Therapist not found' });
+    }
 
     // If email is being updated, validate format
     if (email) {
@@ -120,10 +110,10 @@ export const updateTherapist = async (req, res) => {
         return res.status(400).json({ message: 'Invalid email format' });
       }
 
-      // Check if email already exists for another therapist
-      const existingTherapist = await prisma.therapist.findUnique({ where: { email } });
-      if (existingTherapist && existingTherapist.id !== parseInt(id)) {
-        return res.status(409).json({ message: 'A therapist with this email already exists' });
+      // Check if email already exists for another user
+      const existingUser = await prisma.user.findUnique({ where: { email } });
+      if (existingUser && existingUser.id !== therapist.userId) {
+        return res.status(409).json({ message: 'A user with this email already exists' });
       }
     }
 
@@ -135,23 +125,46 @@ export const updateTherapist = async (req, res) => {
       }
     }
 
-    // Validate status if provided
-    if (status && !['active', 'inactive'].includes(status)) {
-      return res.status(400).json({ message: 'Status must be either active or inactive' });
-    }
-
-    const therapist = await prisma.therapist.update({
+    // Update therapist fields
+    const updatedTherapist = await prisma.therapist.update({
       where: { id: parseInt(id) },
       data: {
-        ...(name && { name: name.trim() }),
-        ...(specialty && { specialty: specialty.trim() }),
-        ...(email && { email: email.toLowerCase().trim() }),
+        ...(specialty && { specialization: specialty.trim() }),
         ...(phone && { phone: phone.trim() }),
-        ...(status && { status })
-      }
+        ...(status && { status: status.trim() })
+      },
+      include: { user: true }
     });
 
-    res.json({ message: 'Therapist updated successfully', therapist });
+    // Update user name if provided
+    if (name) {
+      await prisma.user.update({
+        where: { id: therapist.userId },
+        data: { name: name.trim() }
+      });
+      updatedTherapist.user.name = name.trim();
+    }
+
+    // Update user email if provided
+    if (email) {
+      await prisma.user.update({
+        where: { id: therapist.userId },
+        data: { email: email.toLowerCase().trim() }
+      });
+      updatedTherapist.user.email = email.toLowerCase().trim();
+    }
+
+    // Update password if provided
+    if (password && password.trim().length > 0) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const updatedUser = await prisma.user.update({
+        where: { id: therapist.userId },
+        data: { password: hashedPassword }
+      });
+      updatedTherapist.user = updatedUser; // Replace with fresh user data from database
+    }
+
+    res.json({ message: 'Therapist updated successfully', therapist: updatedTherapist });
   } catch (error) {
     res.status(500).json({ message: 'Error updating therapist', error: error.message });
   }

@@ -58,11 +58,23 @@ const ManageAppointments = () => {
         patientAPI.getAll(),
         therapistAPI.getAll(),
       ]);
-      setPatients(patientsRes.data);
-      setTherapists(therapistsRes.data);
+      console.log('Patients response:', patientsRes);
+      console.log('Therapists response:', therapistsRes);
+      
+      // Handle different response formats
+      const patientsData = patientsRes.data || patientsRes || [];
+      const therapistsData = therapistsRes.data || therapistsRes || [];
+      
+      console.log('Patients data to set:', patientsData);
+      console.log('Therapists data to set:', therapistsData);
+      
+      setPatients(Array.isArray(patientsData) ? patientsData : []);
+      setTherapists(Array.isArray(therapistsData) ? therapistsData : []);
       fetchAppointments();
     } catch (error) {
       console.error('Error fetching initial data:', error);
+      setPatients([]);
+      setTherapists([]);
     }
   };
 
@@ -187,6 +199,48 @@ const ManageAppointments = () => {
             onChange={(e) => setFilters({ ...filters, date: e.target.value })}
             InputLabelProps={{ shrink: true }}
           />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label="Filter by Patient"
+            select
+            SelectProps={{ native: true }}
+            value={filters.patientId}
+            onChange={(e) => setFilters({ ...filters, patientId: e.target.value })}
+          >
+            <option value="">All Patients</option>
+            {patients && patients.length > 0 ? (
+              patients.map((patient) => (
+                <option key={patient.id} value={patient.id}>
+                  {patient.fullName || 'Unknown'}
+                </option>
+              ))
+            ) : (
+              <option disabled>No patients available</option>
+            )}
+          </TextField>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label="Filter by Therapist"
+            select
+            SelectProps={{ native: true }}
+            value={filters.therapistId}
+            onChange={(e) => setFilters({ ...filters, therapistId: e.target.value })}
+          >
+            <option value="">All Therapists</option>
+            {therapists && therapists.length > 0 ? (
+              therapists.map((therapist) => (
+                <option key={therapist.id} value={therapist.id}>
+                  {therapist.name || 'Unknown'}
+                </option>
+              ))
+            ) : (
+              <option disabled>No therapists available</option>
+            )}
+          </TextField>
         </Grid>
       </Grid>
 

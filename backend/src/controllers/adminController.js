@@ -153,9 +153,9 @@ export const getAllAdmins = async (req, res) => {
 export const updateAdmin = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email } = req.body;
+    const { name, email, password, status } = req.body;
 
-    if (!name && !email) {
+    if (!name && !email && !password && !status) {
       return res.status(400).json({ message: 'At least one field required to update' });
     }
 
@@ -168,29 +168,44 @@ export const updateAdmin = async (req, res) => {
 
       // Check if new email already exists (if different from current)
       const existingUser = await prisma.user.findUnique({ where: { email } });
-      const currentAdmin = await prisma.user.findUnique({ where: { id: parseInt(id) } });
       
       if (existingUser && existingUser.id !== parseInt(id)) {
         return res.status(409).json({ message: 'Email already in use' });
       }
     }
 
+    // Prepare update data
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+    
+    // Hash and update password if provided
+    if (password && password.trim().length > 0) {
+      const bcrypt = require('bcryptjs');
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
     // Update user record
     const updatedUser = await prisma.user.update({
       where: { id: parseInt(id) },
-      data: {
-        ...(name && { name }),
-        ...(email && { email })
-      },
+      data: updateData,
       include: { admin: true }
     });
+
+    // Update admin status if provided
+    if (status) {
+      await prisma.admin.update({
+        where: { userId: parseInt(id) },
+        data: { status: status.trim() }
+      });
+    }
 
     res.json({
       id: updatedUser.id,
       name: updatedUser.name,
       email: updatedUser.email,
       role: updatedUser.role,
-      status: 'active'
+      status: status || 'active'
     });
   } catch (error) {
     res.status(500).json({ message: 'Error updating admin', error: error.message });
@@ -269,5 +284,90 @@ export const changeAdminPassword = async (req, res) => {
     res.json({ message: 'Password changed successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error changing password', error: error.message });
+  }
+};
+
+// Reset password for any user (patients, therapists, users) - Admin only
+export const resetUserPassword = async (req, res) => {
+  try {
+    const { userId, newPassword } = req.body;
+
+    // Validate required fields
+    if (!userId || !newPassword) {
+      return res.status(400).json({ message: 'User ID and new password are required' });
+    }
+
+    // Validate new password length
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId) }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Hash the new password
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Update user password
+    const updatedUser = await prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: { password: hashedPassword },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true
+      }
+    });
+
+    res.json({
+      message: 'Password reset successfully',
+      user: updatedUser
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error resetting password', error: error.message });
+  }
+};
+
+// Get all users (patients, therapists) for admin to manage
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        role: {
+          in: ['patient', 'therapist']
+        }
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        createdAt: true,
+        patient: {
+          select: {
+            phone: true,
+            gender: true
+          }
+        },
+        therapist: {
+          select: {
+            specialization: true,
+            phone: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching users', error: error.message });
   }
 };
