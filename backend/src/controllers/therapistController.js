@@ -45,11 +45,11 @@ export const getTherapistById = async (req, res) => {
 
 export const createTherapist = async (req, res) => {
   try {
-    const { name, specialty, email, phone } = req.body;
+    const { name, email, phone } = req.body;
 
     // Validate all fields are present
-    if (!name || !specialty || !email || !phone) {
-      return res.status(400).json({ message: 'All fields are required: name, specialty, email, phone' });
+    if (!name || !email || !phone) {
+      return res.status(400).json({ message: 'All fields are required: name, email, phone' });
     }
 
     // Validate email format
@@ -77,8 +77,7 @@ export const createTherapist = async (req, res) => {
 
     const therapist = await prisma.therapist.create({
       data: { 
-        name: name.trim(), 
-        specialty: specialty.trim(), 
+        name: name.trim(),  
         email: email.toLowerCase().trim(),
         phone: phone.trim() 
       }
