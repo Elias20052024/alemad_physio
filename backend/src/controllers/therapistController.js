@@ -46,11 +46,11 @@ export const getTherapistById = async (req, res) => {
 
 export const createTherapist = async (req, res) => {
   try {
-    const { name, specialty, email, phone } = req.body;
+    const { name, email, phone, password } = req.body;
 
     // Validate all fields are present
-    if (!name || !specialty || !email || !phone) {
-      return res.status(400).json({ message: 'All fields are required: name, specialty, email, phone' });
+    if (!name || !email || !phone || !password) {
+      return res.status(400).json({ message: 'All fields are required: name, email, phone, password' });
     }
 
     // Validate email format
@@ -65,23 +65,38 @@ export const createTherapist = async (req, res) => {
       return res.status(400).json({ message: 'Invalid phone number format. Use format like: +966501234567 or (050) 123-4567' });
     }
 
-    // Validate name and specialty are not just whitespace
-    if (name.trim().length === 0 || specialty.trim().length === 0) {
-      return res.status(400).json({ message: 'Name and specialty cannot be empty' });
+    // Validate name is not just whitespace
+    if (name.trim().length === 0) {
+      return res.status(400).json({ message: 'Name cannot be empty' });
     }
 
     // Check if email already exists
-    const existingTherapist = await prisma.user.findUnique({ where: { email } });
-    if (existingTherapist) {
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
       return res.status(409).json({ message: 'A therapist with this email already exists' });
     }
 
-    const therapist = await prisma.user.create({
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user with therapist role
+    const user = await prisma.user.create({
       data: {
         name: name.trim(),
-        specialty: specialty.trim(),
         email: email.toLowerCase().trim(),
+        password: hashedPassword,
+        role: 'therapist'
+      }
+    });
+
+    // Create therapist record linked to user
+    const therapist = await prisma.therapist.create({
+      data: {
+        userId: user.id,
         phone: phone.trim()
+      },
+      include: {
+        user: true
       }
     });
 
