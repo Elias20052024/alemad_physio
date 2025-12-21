@@ -849,7 +849,18 @@ const AdminPortal = () => {
                 {language === 'ar' ? 'المواعيد اليوم' : 'Today Appointments'}
               </Typography>
               <Typography variant="h4" sx={{ color: '#ff9800' }}>
-                5
+                {(() => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const tomorrow = new Date(today);
+                  tomorrow.setDate(tomorrow.getDate() + 1);
+                  
+                  return appointments.filter(apt => {
+                    const aptDate = new Date(apt.appointmentDate);
+                    aptDate.setHours(0, 0, 0, 0);
+                    return aptDate.getTime() === today.getTime();
+                  }).length;
+                })()}
               </Typography>
             </CardContent>
           </Card>
