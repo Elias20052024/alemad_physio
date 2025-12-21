@@ -34,6 +34,7 @@ export const getTherapistById = async (req, res) => {
     });
 
     if (!therapist) {
+      c
       return res.status(404).json({ message: 'Therapist not found' });
     }
 
@@ -45,11 +46,11 @@ export const getTherapistById = async (req, res) => {
 
 export const createTherapist = async (req, res) => {
   try {
-    const { name, email, phone } = req.body;
+    const { name, specialty, email, phone } = req.body;
 
     // Validate all fields are present
-    if (!name || !email || !phone) {
-      return res.status(400).json({ message: 'All fields are required: name, email, phone' });
+    if (!name || !specialty || !email || !phone) {
+      return res.status(400).json({ message: 'All fields are required: name, specialty, email, phone' });
     }
 
     // Validate email format
@@ -70,16 +71,17 @@ export const createTherapist = async (req, res) => {
     }
 
     // Check if email already exists
-    const existingTherapist = await prisma.therapist.findUnique({ where: { email } });
+    const existingTherapist = await prisma.user.findUnique({ where: { email } });
     if (existingTherapist) {
       return res.status(409).json({ message: 'A therapist with this email already exists' });
     }
 
-    const therapist = await prisma.therapist.create({
-      data: { 
-        name: name.trim(),  
+    const therapist = await prisma.user.create({
+      data: {
+        name: name.trim(),
+        specialty: specialty.trim(),
         email: email.toLowerCase().trim(),
-        phone: phone.trim() 
+        phone: phone.trim()
       }
     });
 
