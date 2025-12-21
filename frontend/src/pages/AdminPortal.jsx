@@ -20,17 +20,17 @@ const clearAppointmentsCache = () => {
 // Helper functions for date conversion
 const formatDateForInput = (dateString) => {
   if (!dateString) return '';
-
+  
   // If already in yyyy-MM-dd format, return as-is
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
     return dateString;
   }
-
+  
   // Convert from MM/DD/YYYY or other date formats
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '';
-
+    
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -42,7 +42,7 @@ const formatDateForInput = (dateString) => {
 
 const formatDateForDisplay = (dateString) => {
   if (!dateString) return '';
-
+  
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return dateString;
@@ -72,7 +72,7 @@ const AdminPortal = () => {
 
   // Status color mapping
   const getStatusColor = (status) => {
-    switch (status) {
+    switch(status) {
       case 'active':
         return '#4caf50'; // Green
       case 'inactive':
@@ -91,7 +91,7 @@ const AdminPortal = () => {
   };
 
   const getStatusLabel = (status) => {
-    switch (status) {
+    switch(status) {
       case 'active':
         return language === 'ar' ? 'نشط' : 'Active';
       case 'inactive':
@@ -133,7 +133,7 @@ const AdminPortal = () => {
   const refreshAllData = async () => {
     try {
       console.log('🔄 Refreshing all data...');
-
+      
       // Fetch patients
       const patientsResponse = await patientService.getAllPatients();
       const patientsData = patientsResponse.data || patientsResponse || [];
@@ -165,7 +165,7 @@ const AdminPortal = () => {
       const appointmentsResponse = await axios.get(`${API_BASE_URL}/appointments`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
+      
       const formattedAppointments = (appointmentsResponse.data || []).map(apt => ({
         id: apt.id,
         patientName: apt.patient?.user?.name || apt.patient?.fullName || 'Unknown',
@@ -177,7 +177,7 @@ const AdminPortal = () => {
       }));
       console.log('📅 Refreshed appointments:', formattedAppointments);
       setAppointments(formattedAppointments);
-
+      
       console.log('✅ All data refreshed successfully');
     } catch (error) {
       console.error('Error refreshing data:', error);
@@ -227,7 +227,7 @@ const AdminPortal = () => {
             headers: { Authorization: `Bearer ${token}` }
           });
           console.log('📅 Fetched appointments from API:', appointmentsResponse.data);
-
+          
           // Format appointments to include patient and therapist names
           const formattedAppointments = (appointmentsResponse.data || []).map(apt => ({
             id: apt.id,
@@ -238,7 +238,7 @@ const AdminPortal = () => {
             status: (apt.status || 'pending').trim(),
             ...apt
           }));
-
+          
           setAppointments(formattedAppointments);
         } catch (error) {
           console.error('Error fetching appointments:', error);
@@ -292,7 +292,7 @@ const AdminPortal = () => {
 
     // Load patient bookings once on mount
     loadPatientBookings();
-  }, []); const handleOpenAddDialog = (type) => {
+  }, []);  const handleOpenAddDialog = (type) => {
     setDialogType(type);
     if (type === 'therapist') {
       setFormData({ name: '', specialty: '', email: '', phone: '', password: '' });
@@ -315,7 +315,7 @@ const AdminPortal = () => {
   const handleOpenEditDialog = (type, item) => {
     setDialogType(type);
     setEditingId(item.id);
-
+    
     // Map the item data to formData structure based on type
     let mappedData = {};
     if (type === 'patient') {
@@ -347,7 +347,7 @@ const AdminPortal = () => {
         date: formatDateForInput(item.date || item.appointmentDate)
       };
     }
-
+    
     setFormData(mappedData);
     setEditDialogOpen(true);
   };
@@ -394,10 +394,10 @@ const AdminPortal = () => {
       }
     } catch (error) {
       console.error('Error deleting:', error);
-      setSnackbar({
-        open: true,
-        message: error.response?.data?.message || 'Error deleting item. Please try again.',
-        severity: 'error'
+      setSnackbar({ 
+        open: true, 
+        message: error.response?.data?.message || 'Error deleting item. Please try again.', 
+        severity: 'error' 
       });
       return;
     }
@@ -503,16 +503,16 @@ const AdminPortal = () => {
     const allTimes = [
       '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'
     ];
-
+    
     // Find booked times for this therapist on this date
     const bookedTimes = appointments
-      .filter(app =>
-        app.therapistName === therapistName &&
+      .filter(app => 
+        app.therapistName === therapistName && 
         app.date === date &&
         (excludeAppointmentId === null || app.id !== excludeAppointmentId)
       )
       .map(app => app.time);
-
+    
     // Return available times
     return allTimes.filter(time => !bookedTimes.includes(time));
   };
@@ -536,18 +536,18 @@ const AdminPortal = () => {
           phone: formData.phone || undefined,
           password: formData.password || undefined
         };
-
+        
         // Remove undefined fields
         Object.keys(therapistData).forEach(key => therapistData[key] === undefined && delete therapistData[key]);
-
+        
         console.log('Sending therapist update:', { id: editingId, data: therapistData });
-
+        
         const response = await axios.put(`${API_BASE_URL}/therapists/${editingId}`, therapistData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-
+        
         console.log('Therapist update response:', response.data);
-
+        
         setSnackbar({ open: true, message: 'Therapist updated successfully!', severity: 'success' });
         handleCloseEditDialog();
         await refreshAllData();
@@ -559,14 +559,14 @@ const AdminPortal = () => {
           medicalHistory: formData.medicalHistory || undefined,
           password: formData.password || undefined
         };
-
+        
         // Remove undefined fields
         Object.keys(patientData).forEach(key => patientData[key] === undefined && delete patientData[key]);
-
+        
         const response = await axios.put(`${API_BASE_URL}/patients/${editingId}`, patientData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-
+        
         setSnackbar({ open: true, message: 'Patient updated successfully!', severity: 'success' });
         handleCloseEditDialog();
         await refreshAllData();
@@ -648,7 +648,7 @@ const AdminPortal = () => {
         await axios.post(`${API_BASE_URL}/appointments`, appointmentData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-
+        
         setSnackbar({
           open: true,
           message: 'Appointment scheduled successfully!',
@@ -751,8 +751,8 @@ const AdminPortal = () => {
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
-          <Typography
-            variant="h2"
+          <Typography 
+            variant="h2" 
             sx={{ color: '#1C6FB5', fontWeight: 'bold', fontSize: { xs: '1.8rem', md: '2.5rem' } }}
           >
             {language === 'ar' ? 'بوابة المسؤول' : 'Admin Portal'}
@@ -804,8 +804,8 @@ const AdminPortal = () => {
               {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
             </MenuItem>
           </Menu>
-          <Button
-            variant="contained"
+          <Button 
+            variant="contained" 
             color="error"
             startIcon={<LogoutSharp />}
             onClick={handleLogout}
@@ -879,8 +879,8 @@ const AdminPortal = () => {
             </Tabs>
           </Box>
           {tabValue === 0 && (
-            <Button
-              variant="contained"
+            <Button 
+              variant="contained" 
               startIcon={<AddIcon />}
               onClick={() => handleOpenAddDialog('patient')}
               sx={{ flexShrink: 0 }}
@@ -889,44 +889,44 @@ const AdminPortal = () => {
             </Button>
           )}
           {tabValue === 1 && (
-            <Button
-              variant="contained"
+            <Button 
+              variant="contained" 
               startIcon={<AddIcon />}
               onClick={() => handleOpenAddDialog('therapist')}
               sx={{ flexShrink: 0 }}
-            >
-              {language === 'ar' ? 'إضافة معالج' : 'Add Therapist'}
-            </Button>
-          )}
-          {tabValue === 2 && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenAddDialog('appointment')}
-              sx={{ flexShrink: 0 }}
-            >
-              {language === 'ar' ? 'جدولة موعد' : 'Schedule Appointment'}
-            </Button>
-          )}
-          {tabValue === 3 && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenAddDialog('admin')}
-              sx={{ flexShrink: 0 }}
-            >
-              {language === 'ar' ? 'إضافة مسؤول' : 'Add Admin'}
-            </Button>
-          )}
+          >
+            {language === 'ar' ? 'إضافة معالج' : 'Add Therapist'}
+          </Button>
+        )}
+        {tabValue === 2 && (
+          <Button 
+            variant="contained" 
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenAddDialog('appointment')}
+            sx={{ flexShrink: 0 }}
+          >
+            {language === 'ar' ? 'جدولة موعد' : 'Schedule Appointment'}
+          </Button>
+        )}
+        {tabValue === 3 && (
+          <Button 
+            variant="contained" 
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenAddDialog('admin')}
+            sx={{ flexShrink: 0 }}
+          >
+            {language === 'ar' ? 'إضافة مسؤول' : 'Add Admin'}
+          </Button>
+        )}
         </Box>
       </Card>
 
       {/* Patients Table */}
       {tabValue === 0 && (
-        <TableContainer component={Paper} sx={{
-          backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
-          borderRadius: '10px',
-          marginTop: 3
+        <TableContainer component={Paper} sx={{ 
+          backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5', 
+          borderRadius: '10px', 
+          marginTop: 3 
         }}>
           <Table>
             <TableHead>
@@ -953,11 +953,11 @@ const AdminPortal = () => {
             </TableHead>
             <TableBody>
               {patients.map((patient, index) => (
-                <TableRow key={patient.id} hover sx={{
-                  backgroundColor: theme.palette.mode === 'dark'
+                <TableRow key={patient.id} hover sx={{ 
+                  backgroundColor: theme.palette.mode === 'dark' 
                     ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
-                    : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'),
-                  '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' }
+                    : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'), 
+                  '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' } 
                 }}>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{patient.user?.name || 'N/A'}</TableCell>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{patient.user?.email || 'N/A'}</TableCell>
@@ -968,7 +968,7 @@ const AdminPortal = () => {
                       value={patient.status || 'active'}
                       onChange={(e) => handleStatusChange('patient', patient.id, e.target.value)}
                       size="small"
-                      sx={{
+                      sx={{ 
                         minWidth: 100,
                         backgroundColor: getStatusColor(patient.status || 'active'),
                         color: 'white',
@@ -1007,10 +1007,10 @@ const AdminPortal = () => {
 
       {/* Therapists Table */}
       {tabValue === 1 && (
-        <TableContainer component={Paper} sx={{
-          backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
-          borderRadius: '10px',
-          marginTop: 3
+        <TableContainer component={Paper} sx={{ 
+          backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5', 
+          borderRadius: '10px', 
+          marginTop: 3 
         }}>
           <Table>
             <TableHead>
@@ -1031,11 +1031,11 @@ const AdminPortal = () => {
             </TableHead>
             <TableBody>
               {therapists.map((therapist, index) => (
-                <TableRow key={therapist.id} hover sx={{
-                  backgroundColor: theme.palette.mode === 'dark'
+                <TableRow key={therapist.id} hover sx={{ 
+                  backgroundColor: theme.palette.mode === 'dark' 
                     ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
-                    : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'),
-                  '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' }
+                    : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'), 
+                  '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' } 
                 }}>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.name}</TableCell>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.user?.email || therapist.email || 'N/A'}</TableCell>
@@ -1044,7 +1044,7 @@ const AdminPortal = () => {
                       value={therapist.status || 'active'}
                       onChange={(e) => handleStatusChange('therapist', therapist.id, e.target.value)}
                       size="small"
-                      sx={{
+                      sx={{ 
                         minWidth: 100,
                         backgroundColor: getStatusColor(therapist.status || 'active'),
                         color: 'white',
@@ -1088,10 +1088,10 @@ const AdminPortal = () => {
 
       {/* Appointments Table */}
       {tabValue === 2 && (
-        <TableContainer component={Paper} sx={{
-          backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
-          borderRadius: '10px',
-          marginTop: 3
+        <TableContainer component={Paper} sx={{ 
+          backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5', 
+          borderRadius: '10px', 
+          marginTop: 3 
         }}>
           <Table>
             <TableHead>
@@ -1118,27 +1118,27 @@ const AdminPortal = () => {
             </TableHead>
             <TableBody>
               {appointments.map((appointment, index) => (
-                <TableRow key={`${appointment.id}-${appointment.type || 'admin'}`} hover sx={{
-                  backgroundColor: appointment.status === 'cancelled'
+                <TableRow key={`${appointment.id}-${appointment.type || 'admin'}`} hover sx={{ 
+                  backgroundColor: appointment.status === 'cancelled' 
                     ? (theme.palette.mode === 'dark' ? '#4a2a2a' : '#ffe6e6')
-                    : (theme.palette.mode === 'dark'
-                      ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
-                      : (index % 2 === 0 ? '#ffffff' : '#f9f9f9')),
+                    : (theme.palette.mode === 'dark' 
+                        ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
+                        : (index % 2 === 0 ? '#ffffff' : '#f9f9f9')),
                   opacity: appointment.status === 'cancelled' ? 0.7 : 1,
-                  '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' }
+                  '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' } 
                 }}>
-                  <TableCell sx={{
-                    color: appointment.status === 'cancelled' ? '#999' : (theme.palette.mode === 'dark' ? '#e0e0e0' : '#333'),
+                  <TableCell sx={{ 
+                    color: appointment.status === 'cancelled' ? '#999' : (theme.palette.mode === 'dark' ? '#e0e0e0' : '#333'), 
                     padding: '14px',
                     textDecoration: appointment.status === 'cancelled' ? 'line-through' : 'none'
                   }}>{appointment.patientName}</TableCell>
-                  <TableCell sx={{
-                    color: appointment.status === 'cancelled' ? '#999' : (theme.palette.mode === 'dark' ? '#e0e0e0' : '#333'),
+                  <TableCell sx={{ 
+                    color: appointment.status === 'cancelled' ? '#999' : (theme.palette.mode === 'dark' ? '#e0e0e0' : '#333'), 
                     padding: '14px',
                     textDecoration: appointment.status === 'cancelled' ? 'line-through' : 'none'
                   }}>{appointment.therapistName}</TableCell>
-                  <TableCell sx={{
-                    color: appointment.status === 'cancelled' ? '#999' : (theme.palette.mode === 'dark' ? '#e0e0e0' : '#333'),
+                  <TableCell sx={{ 
+                    color: appointment.status === 'cancelled' ? '#999' : (theme.palette.mode === 'dark' ? '#e0e0e0' : '#333'), 
                     padding: '14px',
                     textDecoration: appointment.status === 'cancelled' ? 'line-through' : 'none'
                   }}>{appointment.date}</TableCell>
@@ -1153,7 +1153,7 @@ const AdminPortal = () => {
                           value={safeStatus}
                           onChange={(e) => handleStatusChange('appointment', appointment.id, e.target.value)}
                           size="small"
-                          sx={{
+                          sx={{ 
                             minWidth: 100,
                             backgroundColor: getStatusColor(safeStatus),
                             color: 'white',
@@ -1205,10 +1205,10 @@ const AdminPortal = () => {
 
       {/* Admins Table */}
       {tabValue === 3 && (
-        <TableContainer component={Paper} sx={{
-          backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
-          borderRadius: '10px',
-          marginTop: 3
+        <TableContainer component={Paper} sx={{ 
+          backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5', 
+          borderRadius: '10px', 
+          marginTop: 3 
         }}>
           <Table>
             <TableHead>
@@ -1232,11 +1232,11 @@ const AdminPortal = () => {
             </TableHead>
             <TableBody>
               {admins.map((admin, index) => (
-                <TableRow key={admin.id} hover sx={{
-                  backgroundColor: theme.palette.mode === 'dark'
+                <TableRow key={admin.id} hover sx={{ 
+                  backgroundColor: theme.palette.mode === 'dark' 
                     ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
-                    : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'),
-                  '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' }
+                    : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'), 
+                  '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' } 
                 }}>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{admin.name}</TableCell>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{admin.email}</TableCell>
@@ -1246,7 +1246,7 @@ const AdminPortal = () => {
                       value={admin.status || 'active'}
                       onChange={(e) => handleStatusChange('admin', admin.id, e.target.value)}
                       size="small"
-                      sx={{
+                      sx={{ 
                         minWidth: 100,
                         backgroundColor: getStatusColor(admin.status || 'active'),
                         color: 'white',
@@ -1286,13 +1286,13 @@ const AdminPortal = () => {
       {/* Add Dialog */}
       <Dialog open={addDialogOpen} onClose={handleCloseAddDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {dialogType === 'therapist'
+          {dialogType === 'therapist' 
             ? (language === 'ar' ? 'إضافة معالج جديد' : 'Add New Therapist')
             : dialogType === 'patient'
-              ? (language === 'ar' ? 'إضافة مريض جديد' : 'Add New Patient')
-              : dialogType === 'admin'
-                ? (language === 'ar' ? 'إضافة مسؤول جديد' : 'Add New Admin')
-                : (language === 'ar' ? 'جدولة موعد جديد' : 'Schedule New Appointment')
+            ? (language === 'ar' ? 'إضافة مريض جديد' : 'Add New Patient')
+            : dialogType === 'admin'
+            ? (language === 'ar' ? 'إضافة مسؤول جديد' : 'Add New Admin')
+            : (language === 'ar' ? 'جدولة موعد جديد' : 'Schedule New Appointment')
           }
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
@@ -1320,16 +1320,6 @@ const AdminPortal = () => {
                 label={language === 'ar' ? 'الهاتف' : 'Phone'}
                 value={formData.phone || ''}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                margin="normal"
-                required
-              />
-              <TextField
-                fullWidth
-                label={language === "ar" ? "التخصص" : "Speciality"}
-                value={formData.specialty || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, specialty: e.target.value })
-                }
                 margin="normal"
                 required
               />
@@ -1562,13 +1552,13 @@ const AdminPortal = () => {
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onClose={handleCloseEditDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {dialogType === 'therapist'
+          {dialogType === 'therapist' 
             ? (language === 'ar' ? 'تعديل المعالج' : 'Edit Therapist')
             : dialogType === 'patient'
-              ? (language === 'ar' ? 'تعديل المريض' : 'Edit Patient')
-              : dialogType === 'admin'
-                ? (language === 'ar' ? 'تعديل المسؤول' : 'Edit Admin')
-                : (language === 'ar' ? 'تعديل الموعد' : 'Edit Appointment')
+            ? (language === 'ar' ? 'تعديل المريض' : 'Edit Patient')
+            : dialogType === 'admin'
+            ? (language === 'ar' ? 'تعديل المسؤول' : 'Edit Admin')
+            : (language === 'ar' ? 'تعديل الموعد' : 'Edit Appointment')
           }
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
@@ -1596,6 +1586,16 @@ const AdminPortal = () => {
                 label={language === 'ar' ? 'الهاتف' : 'Phone'}
                 value={formData.phone || ''}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                margin="normal"
+                required
+              />
+              <TextField
+                fullWidth
+                label={language === "ar" ? "التخصص" : "Speciality"}
+                value={formData.specialty || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, specialty: e.target.value })
+                }
                 margin="normal"
                 required
               />
@@ -1769,10 +1769,10 @@ const AdminPortal = () => {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={handleCancelDelete}
-        maxWidth="sm"
+      <Dialog 
+        open={deleteDialogOpen} 
+        onClose={handleCancelDelete} 
+        maxWidth="sm" 
         fullWidth
         PaperProps={{
           sx: {
@@ -1781,10 +1781,10 @@ const AdminPortal = () => {
           }
         }}
       >
-        <DialogTitle sx={{
-          bgcolor: 'linear-gradient(135deg, #ff5252 0%, #ff1744 100%)',
-          color: 'white',
-          fontWeight: 'bold',
+        <DialogTitle sx={{ 
+          bgcolor: 'linear-gradient(135deg, #ff5252 0%, #ff1744 100%)', 
+          color: 'white', 
+          fontWeight: 'bold', 
           textAlign: 'center',
           padding: '24px',
           display: 'flex',
@@ -1796,9 +1796,9 @@ const AdminPortal = () => {
           <span style={{ fontSize: '1.5rem' }}>🚨</span>
           {language === 'ar' ? 'تأكيد الحذف' : 'Confirm Delete'}
         </DialogTitle>
-        <DialogContent sx={{
-          pt: 4,
-          pb: 3,
+        <DialogContent sx={{ 
+          pt: 4, 
+          pb: 3, 
           textAlign: 'center',
           backgroundColor: '#fafafa'
         }}>
@@ -1819,13 +1819,13 @@ const AdminPortal = () => {
             </Box>
           </Box>
           <Typography variant="h6" sx={{ mb: 2, color: '#1a1a1a', fontWeight: 600 }}>
-            {language === 'ar'
+            {language === 'ar' 
               ? 'هل أنت متأكد من الحذف؟'
               : 'Are you sure?'
             }
           </Typography>
           <Typography variant="body2" sx={{ mb: 3, color: '#555', lineHeight: 1.6 }}>
-            {language === 'ar'
+            {language === 'ar' 
               ? 'سيتم حذف هذا العنصر نهائياً. هذا الإجراء لا يمكن التراجع عنه.'
               : 'This item will be permanently deleted. This action cannot be undone.'
             }
@@ -1843,17 +1843,17 @@ const AdminPortal = () => {
             </Typography>
           </Box>
         </DialogContent>
-        <DialogActions sx={{
-          p: 3,
-          justifyContent: 'center',
+        <DialogActions sx={{ 
+          p: 3, 
+          justifyContent: 'center', 
           gap: 2,
           backgroundColor: '#f5f5f5',
           borderTop: '1px solid #e0e0e0'
         }}>
-          <Button
-            onClick={handleCancelDelete}
+          <Button 
+            onClick={handleCancelDelete} 
             variant="outlined"
-            sx={{
+            sx={{ 
               minWidth: '140px',
               borderColor: '#1C6FB5',
               color: '#1C6FB5',
@@ -1866,10 +1866,10 @@ const AdminPortal = () => {
           >
             {language === 'ar' ? 'إلغاء' : 'Cancel'}
           </Button>
-          <Button
-            onClick={handleConfirmDelete}
-            variant="contained"
-            sx={{
+          <Button 
+            onClick={handleConfirmDelete} 
+            variant="contained" 
+            sx={{ 
               minWidth: '140px',
               background: 'linear-gradient(135deg, #ff5252 0%, #ff1744 100%)',
               fontWeight: 600,
