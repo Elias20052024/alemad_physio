@@ -28,6 +28,9 @@ const AdminLogin = () => {
       const response = await adminService.login(email, password);
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('admin', JSON.stringify(response.data.admin));
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('userRole', 'admin');
+      localStorage.setItem('userName', response.data.admin?.name || 'Admin');
       navigate('/admin/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');

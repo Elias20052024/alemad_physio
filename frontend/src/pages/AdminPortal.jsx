@@ -9,6 +9,14 @@ import NotificationCenter from '../components/NotificationCenter';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
+// Clear browser cache to ensure fresh data is always loaded
+const clearAppointmentsCache = () => {
+  localStorage.removeItem('appointmentsCache');
+  localStorage.removeItem('appointmentsList');
+  sessionStorage.removeItem('appointmentsCache');
+  sessionStorage.removeItem('appointmentsList');
+};
+
 // Helper functions for date conversion
 const formatDateForInput = (dateString) => {
   if (!dateString) return '';
@@ -179,6 +187,9 @@ const AdminPortal = () => {
   useEffect(() => {
     const fetchAllData = async () => {
       try {
+        // Clear any cached appointments to ensure fresh data
+        clearAppointmentsCache();
+        
         // Fetch patients
         const patientsResponse = await patientService.getAllPatients();
         console.log('📊 Fetched patients from API:', patientsResponse);
@@ -246,7 +257,11 @@ const AdminPortal = () => {
     }
   }, [token]);
 
-  const [appointments, setAppointments] = useState([]);
+  // Initialize appointments as empty array - will be fetched from database
+  const [appointments, setAppointments] = useState(() => {
+    // Don't use localStorage for appointments - always fetch from database
+    return [];
+  });
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
