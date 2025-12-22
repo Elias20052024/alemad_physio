@@ -13,12 +13,7 @@ export const getAllNotifications = async (req, res) => {
     const notifications = await prisma.notification.findMany({
       where,
       include: {
-        appointment: {
-          include: {
-            patient: { include: { user: true } },
-            therapist: { include: { user: true } }
-          }
-        }
+        booking: true
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -45,24 +40,24 @@ export const getUnreadNotificationsCount = async (req, res) => {
 
 export const createNotification = async (req, res) => {
   try {
-    const { appointmentId, type, title, message } = req.body;
+    const { bookingId, type, title, message } = req.body;
 
-    if (!appointmentId || !title || !message) {
-      return res.status(400).json({ message: 'appointmentId, title, and message are required' });
+    if (!bookingId || !title || !message) {
+      return res.status(400).json({ message: 'bookingId, title, and message are required' });
     }
 
-    // Verify appointment exists
-    const appointment = await prisma.appointment.findUnique({
-      where: { id: parseInt(appointmentId) }
+    // Verify booking exists
+    const booking = await prisma.booking.findUnique({
+      where: { id: parseInt(bookingId) }
     });
 
-    if (!appointment) {
-      return res.status(404).json({ message: 'Appointment not found' });
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
     }
 
     const notification = await prisma.notification.create({
       data: {
-        appointmentId: parseInt(appointmentId),
+        bookingId: parseInt(bookingId),
         type: type || 'booking_request',
         title,
         message,
@@ -70,12 +65,7 @@ export const createNotification = async (req, res) => {
         status: 'pending'
       },
       include: {
-        appointment: {
-          include: {
-            patient: { include: { user: true } },
-            therapist: { include: { user: true } }
-          }
-        }
+        booking: true
       }
     });
 
@@ -94,12 +84,7 @@ export const markNotificationAsRead = async (req, res) => {
       where: { id: parseInt(id) },
       data: { isRead: true },
       include: {
-        appointment: {
-          include: {
-            patient: { include: { user: true } },
-            therapist: { include: { user: true } }
-          }
-        }
+        booking: true
       }
     });
 
@@ -126,19 +111,14 @@ export const updateNotificationStatus = async (req, res) => {
         isRead: true
       },
       include: {
-        appointment: {
-          include: {
-            patient: { include: { user: true } },
-            therapist: { include: { user: true } }
-          }
-        }
+        booking: true
       }
     });
 
-    // If notification is accepted, update appointment status
+    // If notification is accepted, update booking status
     if (status === 'accepted') {
-      await prisma.appointment.update({
-        where: { id: notification.appointmentId },
+      await prisma.booking.update({
+        where: { id: notification.bookingId },
         data: { status: 'confirmed' }
       });
     }

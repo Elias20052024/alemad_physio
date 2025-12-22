@@ -9,6 +9,8 @@ import adminRoutes from './src/routes/adminRoutes.js';
 import therapistRoutes from './src/routes/therapistRoutes.js';
 import patientRoutes from './src/routes/patientRoutes.js';
 import appointmentRoutes from './src/routes/appointmentRoutes.js';
+import bookingRoutes from './src/routes/bookingRoutes.js';
+import notificationRoutes from './src/routes/notificationRoutes.js';
 
 dotenv.config();
 
@@ -30,6 +32,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/therapists', therapistRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

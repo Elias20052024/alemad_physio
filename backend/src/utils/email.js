@@ -7,6 +7,9 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER || 'alemad1pt@gmail.com',
     pass: process.env.EMAIL_PASSWORD || process.env.GMAIL_APP_PASSWORD,
   },
+  tls: {
+    rejectUnauthorized: false // Allow self-signed certificates
+  }
 });
 
 export const sendBookingNotificationToAdmin = async (booking) => {

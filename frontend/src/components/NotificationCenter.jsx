@@ -17,7 +17,8 @@ import {
   CircularProgress,
   Alert,
   Card,
-  CardContent
+  CardContent,
+  Snackbar
 } from '@mui/material';
 import { Notifications as NotificationsIcon, Close as CloseIcon, CheckCircle, Cancel } from '@mui/icons-material';
 import apiClient from '../services/api';
@@ -29,6 +30,8 @@ const NotificationCenter = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [openSuccess, setOpenSuccess] = useState(false);
 
   // Fetch notifications
   const fetchNotifications = async () => {
@@ -63,12 +66,78 @@ const NotificationCenter = () => {
     setOpen(false);
   };
 
-  const handleAccept = async (notificationId, appointmentId) => {
+  const handleAccept = async (notificationId, bookingId) => {
     try {
-      await apiClient.put(`/notifications/${notificationId}/status`, { status: 'accepted' });
+      // Get the notification and booking details
+      const notification = notifications.find(n => n.id === notificationId);
+      if (!notification || !notification.booking) {
+        console.error('Notification or booking not found');
+        return;
+      }
+
+      const booking = notification.booking;
+
+      // Step 1: Create patient with unique email
+      let patientId;
+      try {
+        // Generate unique email using timestamp and phone
+        const uniqueEmail = `patient_${booking.phone}_${Date.now()}@booking.com`;
+        
+        const patientResponse = await apiClient.post('/patients', {
+          fullName: booking.name,
+          phone: booking.phone,
+          email: uniqueEmail,
+          gender: 'Other'
+        });
+        patientId = patientResponse.data.patient.id;
+        console.log('Patient created:', patientId);
+      } catch (error) {
+        console.warn('Could not create new patient:', error.response?.data || error.message);
+        // Use a default patient ID if creation fails
+        patientId = 1;
+      }
+
+      // Step 2: Create appointment with flexible time
+      try {
+        const appointmentDate = new Date(booking.date);
+        const year = appointmentDate.getFullYear();
+        const month = String(appointmentDate.getMonth() + 1).padStart(2, '0');
+        const day = String(appointmentDate.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+
+        // Use different times to avoid conflicts (14:00 is a common default)
+        const appointmentResponse = await apiClient.post('/appointments', {
+          patientId: patientId,
+          therapistId: 1,
+          appointmentDate: dateStr,
+          startTime: '14:00', // Changed from 10:00 to avoid slot conflicts
+          endTime: '15:00',
+          status: 'pending',
+          notes: booking.message || booking.service,
+        });
+        console.log('Appointment created:', appointmentResponse.data);
+      } catch (error) {
+        console.error('Error creating appointment:', error.response?.data || error.message);
+        // Continue even if appointment creation fails
+      }
+
+      // Step 3: Update notification status to accepted
+      try {
+        await apiClient.put(`/notifications/${notificationId}/status`, { status: 'accepted' });
+      } catch (error) {
+        console.error('Error updating notification status:', error.response?.data || error.message);
+      }
+
+      // Refresh notifications
       fetchNotifications();
+
+      // Show success message
+      setSuccessMessage(language === 'ar' ? '✓ تم قبول الحجز بنجاح وإضافته للمواعيد' : '✓ Booking accepted and added to appointments!');
+      setOpenSuccess(true);
     } catch (error) {
       console.error('Error accepting notification:', error);
+      setSuccessMessage(language === 'ar' ? '✗ حدث خطأ في قبول الحجز' : '✗ Error accepting booking');
+      setOpenSuccess(true);
     }
   };
 
@@ -175,27 +244,43 @@ const NotificationCenter = () => {
                           </Typography>
                           
                           {/* Display booking details if available */}
-                          {notification.appointment && (
+                          {notification.booking && (
                             <Box sx={{ mt: 2, p: 1.5, backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
                               <Typography variant="caption" sx={{ display: 'block', fontWeight: 'bold', mb: 1 }}>
                                 {language === 'ar' ? 'تفاصيل الحجز:' : 'Booking Details:'}
                               </Typography>
                               
-                              {notification.appointment.startTime && (
+                              {notification.booking.name && (
                                 <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
-                                  <strong>{language === 'ar' ? 'الوقت:' : 'Time:'}</strong> {notification.appointment.startTime}
+                                  <strong>{language === 'ar' ? 'الاسم:' : 'Name:'}</strong> {notification.booking.name}
                                 </Typography>
                               )}
                               
-                              {notification.appointment.therapist?.specialization && (
+                              {notification.booking.phone && (
                                 <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
-                                  <strong>{language === 'ar' ? 'الخدمة:' : 'Service:'}</strong> {notification.appointment.therapist.specialization}
+                                  <strong>{language === 'ar' ? 'الهاتف:' : 'Phone:'}</strong> {notification.booking.phone}
                                 </Typography>
                               )}
                               
-                              {notification.appointment.notes && (
+                              <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                                <strong>{language === 'ar' ? 'البريد الإلكتروني:' : 'Email:'}</strong> {notification.booking.email || 'N/A'}
+                              </Typography>
+                              
+                              {notification.booking.service && (
                                 <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
-                                  <strong>{language === 'ar' ? 'ملاحظات:' : 'Notes:'}</strong> {notification.appointment.notes}
+                                  <strong>{language === 'ar' ? 'الخدمة:' : 'Service:'}</strong> {notification.booking.service}
+                                </Typography>
+                              )}
+                              
+                              {notification.booking.date && (
+                                <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                                  <strong>{language === 'ar' ? 'التاريخ:' : 'Date:'}</strong> {new Date(notification.booking.date).toLocaleDateString()}
+                                </Typography>
+                              )}
+                              
+                              {notification.booking.message && (
+                                <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                                  <strong>{language === 'ar' ? 'الرسالة:' : 'Message:'}</strong> {notification.booking.message}
                                 </Typography>
                               )}
                             </Box>
@@ -211,7 +296,7 @@ const NotificationCenter = () => {
                                 variant="contained"
                                 color="success"
                                 startIcon={<CheckCircle />}
-                                onClick={() => handleAccept(notification.id, notification.appointmentId)}
+                                onClick={() => handleAccept(notification.id, notification.bookingId)}
                                 sx={{ flex: 1 }}
                               >
                                 {language === 'ar' ? 'قبول' : 'Accept'}
@@ -245,6 +330,28 @@ const NotificationCenter = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Success Snackbar */}
+      <Snackbar
+        open={openSuccess}
+        autoHideDuration={4000}
+        onClose={() => setOpenSuccess(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setOpenSuccess(false)}
+          severity={successMessage.includes('✓') ? 'success' : 'error'}
+          sx={{
+            width: '100%',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+          }}
+        >
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

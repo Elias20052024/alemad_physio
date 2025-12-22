@@ -58,7 +58,7 @@ const Booking = () => {
     setMessage('');
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
       
       // Call the booking API - it handles patient creation, appointment creation, and notification
       const bookingRes = await fetch(`${API_BASE_URL}/bookings`, {

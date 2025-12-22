@@ -43,17 +43,18 @@ model Patient {
 }
 
 model Therapist {
-  id            Int     @id @default(autoincrement())
-  userId        Int     @unique
-  phone         String?
-  availability  String?
-  status        String  @default("active") // active, inactive
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              Int     @id @default(autoincrement())
+  userId          Int     @unique
+  phone           String?
+  specialization  String?
+  availability    String?
+  status          String  @default("active") // active, inactive
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relations
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  appointments  Appointment[]
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments    Appointment[]
 }
 
 model Admin {
@@ -74,8 +75,6 @@ model Appointment {
   appointmentDate DateTime
   startTime     String
   endTime       String
-  email         String? // Optional email for booking
-  phone         String? // Optional phone for booking
   status        String  @default("pending") // pending, confirmed, completed, cancelled
   notes         String?
   createdAt     DateTime @default(now())
@@ -84,7 +83,6 @@ model Appointment {
   // Relations
   patient       Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
   therapist     Therapist? @relation(fields: [therapistId], references: [id], onDelete: SetNull)
-  notifications Notification[]
 
   @@index([patientId])
   @@index([therapistId])
@@ -105,14 +103,15 @@ model Booking {
   id            Int     @id @default(autoincrement())
   name          String
   phone         String
-  email         String? // Optional email
   service       String
   date          DateTime
-  time          String? // Appointment time (e.g., "09:00", "14:30")
   message       String?
   status        String  @default("pending") // pending, confirmed, completed, cancelled
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  // Relations
+  notifications Notification[]
 
   @@index([date])
   @@index([status])
@@ -139,20 +138,20 @@ model LoginLog {
 }
 
 model Notification {
-  id            Int     @id @default(autoincrement())
-  appointmentId Int
-  type          String  @default("booking_request") // booking_request, status_change
-  title         String
-  message       String
-  isRead        Boolean @default(false)
-  status        String  @default("pending") // pending, accepted, rejected
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id        Int     @id @default(autoincrement())
+  bookingId Int
+  type      String  @default("booking_request") // booking_request, status_change
+  title     String
+  message   String
+  isRead    Boolean @default(false)
+  status    String  @default("pending") // pending, accepted, rejected
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  appointment   Appointment  @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
-  @@index([appointmentId])
+  @@index([bookingId])
   @@index([isRead])
   @@index([status])
   @@index([createdAt])

@@ -9,8 +9,7 @@ export const getAllTherapists = async (req, res) => {
   try {
     const therapists = await prisma.therapist.findMany({
       include: {
-        user: true,
-        appointments: true
+        user: true
       }
     });
 
@@ -26,10 +25,7 @@ export const getTherapistById = async (req, res) => {
     const therapist = await prisma.therapist.findUnique({
       where: { id: parseInt(id) },
       include: {
-        user: true,
-        appointments: {
-          include: { patient: true }
-        }
+        user: true
       }
     });
 

@@ -29,16 +29,31 @@ export const createBooking = async (req, res) => {
       data: {
         name,
         phone,
-        email: email || null,
         service,
         date: bookingDate,
-        time: time || '10:00',
         message: message || null,
         status: 'pending',
       },
     });
 
-    // Notify admin about new booking
+    // Create notification for the booking
+    try {
+      await prisma.notification.create({
+        data: {
+          bookingId: booking.id,
+          type: 'booking_request',
+          title: `New Booking Request from ${name}`,
+          message: `${name} has requested a booking for ${service} on ${bookingDate.toLocaleDateString()} - Phone: ${phone}`,
+          isRead: false,
+          status: 'pending'
+        }
+      });
+    } catch (notificationError) {
+      console.error('Error creating notification:', notificationError);
+      // Continue even if notification fails
+    }
+
+    // Notify admin about new booking via email
     try {
       await sendBookingNotificationToAdmin({
         name,

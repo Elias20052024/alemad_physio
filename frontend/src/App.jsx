@@ -7,9 +7,11 @@ import MenuIcon from '@mui/icons-material/Menu';
 
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { LoadingProvider } from './context/LoadingContext';
 import { lightTheme, darkTheme } from './theme/theme';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import LoadingOverlay from './components/LoadingOverlay';
 
 // Public Pages
 import Home from './pages/Home';
@@ -210,13 +212,16 @@ const AppContent = () => {
 
 function App() {
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </LanguageProvider>
-    </ThemeProvider>
+    <LoadingProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <Router>
+            <AppContent />
+            <LoadingOverlay />
+          </Router>
+        </LanguageProvider>
+      </ThemeProvider>
+    </LoadingProvider>
   );
 }
 

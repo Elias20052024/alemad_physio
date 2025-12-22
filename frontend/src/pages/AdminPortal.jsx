@@ -4,6 +4,7 @@ import { Container, Box, Typography, Card, CardContent, Grid, Button, Table, Tab
 import { LogoutSharp, Edit, Delete, Add as AddIcon, Visibility, VisibilityOff, MoreVert } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useLoading } from '../context/LoadingContext';
 import { therapistService, patientService } from '@services/apiService.js';
 import NotificationCenter from '../components/NotificationCenter';
 
@@ -69,6 +70,7 @@ const AdminPortal = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const token = localStorage.getItem('token');
+  const { showLoading, hideLoading } = useLoading();
 
   // Status color mapping
   const getStatusColor = (status) => {
@@ -124,6 +126,7 @@ const AdminPortal = () => {
     confirmPassword: ''
   });
   const [therapists, setTherapists] = useState([]);
+  const [refreshKey, setRefreshKey] = useState(0); // Force re-render key
 
   const [admins, setAdmins] = useState([]);
 
@@ -132,6 +135,7 @@ const AdminPortal = () => {
   // Function to refresh all data from API
   const refreshAllData = async () => {
     try {
+      showLoading('Loading data...');
       console.log('🔄 Refreshing all data...');
 
       // Fetch patients
@@ -149,38 +153,55 @@ const AdminPortal = () => {
       const therapistsData = therapistsResponse.data || therapistsResponse || [];
       const mappedTherapists = Array.isArray(therapistsData) ? therapistsData.map(t => ({
         ...t,
-        name: t.user?.name || t.name || 'Unknown'
+        name: t.user?.name || t.name || 'Unknown',
+        email: t.user?.email || t.email || 'N/A'
       })) : [];
       console.log('👨‍⚕️ Refreshed therapists:', mappedTherapists);
-      setTherapists(mappedTherapists);
+      setTherapists([...mappedTherapists]); // Force new array reference
+      setRefreshKey(prev => prev + 1); // Force re-render
 
       // Fetch admins
-      const adminsResponse = await axios.get(`${API_BASE_URL}/admin/list`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      console.log('🔐 Refreshed admins:', adminsResponse.data);
-      setAdmins(adminsResponse.data || []);
+      try {
+        const adminsResponse = await axios.get(`${API_BASE_URL}/admin/list`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log('🔐 Refreshed admins:', adminsResponse.data);
+        setAdmins(adminsResponse.data || []);
+      } catch (error) {
+        console.error('Error refreshing admins:', error);
+        setAdmins([]);
+      }
 
       // Fetch appointments
-      const appointmentsResponse = await axios.get(`${API_BASE_URL}/appointments`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      try {
+        const appointmentsResponse = await axios.get(`${API_BASE_URL}/appointments`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-      const formattedAppointments = (appointmentsResponse.data || []).map(apt => ({
-        id: apt.id,
-        patientName: apt.patient?.user?.name || apt.patient?.fullName || 'Unknown',
-        therapistName: apt.therapist?.user?.name || apt.therapist?.name || 'Unknown',
-        date: apt.appointmentDate ? new Date(apt.appointmentDate).toLocaleDateString() : 'N/A',
-        time: apt.startTime || 'N/A',
-        status: apt.status || 'pending',
-        ...apt
-      }));
-      console.log('📅 Refreshed appointments:', formattedAppointments);
-      setAppointments(formattedAppointments);
+        const formattedAppointments = (appointmentsResponse.data || []).map(apt => ({
+          id: apt.id,
+          patientName: apt.patient?.user?.name || apt.patient?.fullName || 'Unknown',
+          therapistName: apt.therapist?.user?.name || apt.therapist?.name || 'Unknown',
+          date: apt.appointmentDate ? new Date(apt.appointmentDate).toLocaleDateString() : 'N/A',
+          time: apt.startTime || 'N/A',
+          status: apt.status || 'pending',
+          ...apt
+        }));
+        console.log('📅 Refreshed appointments:', formattedAppointments);
+        setAppointments(formattedAppointments);
+      } catch (error) {
+        console.error('Error refreshing appointments:', error);
+        setAppointments([]);
+      }
 
       console.log('✅ All data refreshed successfully');
+      
+      // Add a small delay to ensure state updates are processed
+      await new Promise(resolve => setTimeout(resolve, 100));
+      hideLoading();
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      console.error('Error refreshing patients or therapists:', error);
+      hideLoading();
     }
   };
 
@@ -215,11 +236,16 @@ const AdminPortal = () => {
         setTherapists(mappedTherapists);
 
         // Fetch admins (using API call)
-        const adminsResponse = await axios.get(`${API_BASE_URL}/admin/list`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        console.log('👤 Fetched admins from API:', adminsResponse.data);
-        setAdmins(adminsResponse.data || []);
+        try {
+          const adminsResponse = await axios.get(`${API_BASE_URL}/admin/list`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          console.log('👤 Fetched admins from API:', adminsResponse.data);
+          setAdmins(adminsResponse.data || []);
+        } catch (error) {
+          console.error('Error fetching admins:', error);
+          setAdmins([]);
+        }
 
         // Fetch appointments
         try {
@@ -245,7 +271,7 @@ const AdminPortal = () => {
           setAppointments([]);
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching patients or therapists:', error);
         setPatients([]);
         setTherapists([]);
         setAdmins([]);
@@ -297,7 +323,7 @@ const AdminPortal = () => {
     if (type === 'therapist') {
       setFormData({ name: '', specialty: '', email: '', phone: '', password: '' });
     } else if (type === 'patient') {
-      setFormData({ fullName: '', phone: '', email: '', gender: '', password: '' });
+      setFormData({ fullName: '', phone: '', email: '', age: '', gender: '', password: '' });
     } else if (type === 'appointment') {
       setFormData({ patientName: '', therapistName: '', date: '', time: '' });
     } else if (type === 'admin') {
@@ -322,6 +348,7 @@ const AdminPortal = () => {
       mappedData = {
         fullName: item.user?.name || '',
         phone: item.phone || '',
+        age: item.age || '',
         gender: item.gender || '',
         medicalHistory: item.medicalHistory || '',
         email: item.user?.email || ''
@@ -555,6 +582,8 @@ const AdminPortal = () => {
         const patientData = {
           fullName: formData.fullName || undefined,
           phone: formData.phone || undefined,
+          email: formData.email || undefined,
+          age: formData.age || undefined,
           gender: formData.gender || undefined,
           medicalHistory: formData.medicalHistory || undefined,
           password: formData.password || undefined
@@ -619,6 +648,7 @@ const AdminPortal = () => {
         const patientData = {
           fullName: formData.fullName,
           phone: formData.phone,
+          age: formData.age ? parseInt(formData.age) : null,
           gender: formData.gender,
           email: formData.email,
           password: formData.password
@@ -941,6 +971,9 @@ const AdminPortal = () => {
                   {language === 'ar' ? 'الهاتف' : 'Phone'}
                 </TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                  {language === 'ar' ? 'العمر' : 'Age'}
+                </TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'تاريخ الانضمام' : 'Join Date'}
                 </TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
@@ -951,9 +984,9 @@ const AdminPortal = () => {
                 </TableCell>
               </TableRow>
             </TableHead>
-            <TableBody>
+            <TableBody key={refreshKey}>
               {patients.map((patient, index) => (
-                <TableRow key={patient.id} hover sx={{
+                <TableRow key={`${patient.id}-${refreshKey}`} hover sx={{
                   backgroundColor: theme.palette.mode === 'dark'
                     ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
                     : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'),
@@ -962,6 +995,7 @@ const AdminPortal = () => {
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{patient.user?.name || 'N/A'}</TableCell>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{patient.user?.email || 'N/A'}</TableCell>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{patient.phone || 'N/A'}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{patient.age || 'N/A'}</TableCell>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{patient.createdAt ? new Date(patient.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
                   <TableCell>
                     <Select
@@ -1022,6 +1056,9 @@ const AdminPortal = () => {
                   {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
                 </TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                  {language === 'ar' ? 'رقم الهاتف' : 'Phone'}
+                </TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
                   {language === 'ar' ? 'الحالة' : 'Status'}
                 </TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
@@ -1029,9 +1066,9 @@ const AdminPortal = () => {
                 </TableCell>
               </TableRow>
             </TableHead>
-            <TableBody>
+            <TableBody key={refreshKey}>
               {therapists.map((therapist, index) => (
-                <TableRow key={therapist.id} hover sx={{
+                <TableRow key={`${therapist.id}-${refreshKey}`} hover sx={{
                   backgroundColor: theme.palette.mode === 'dark'
                     ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
                     : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'),
@@ -1039,6 +1076,7 @@ const AdminPortal = () => {
                 }}>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.name}</TableCell>
                   <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.user?.email || therapist.email || 'N/A'}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.phone || 'N/A'}</TableCell>
                   <TableCell>
                     <Select
                       value={therapist.status || 'active'}
@@ -1116,9 +1154,9 @@ const AdminPortal = () => {
                 </TableCell>
               </TableRow>
             </TableHead>
-            <TableBody>
+            <TableBody key={refreshKey}>
               {appointments.map((appointment, index) => (
-                <TableRow key={`${appointment.id}-${appointment.type || 'admin'}`} hover sx={{
+                <TableRow key={`${appointment.id}-${appointment.type || 'admin'}-${refreshKey}`} hover sx={{
                   backgroundColor: appointment.status === 'cancelled'
                     ? (theme.palette.mode === 'dark' ? '#4a2a2a' : '#ffe6e6')
                     : (theme.palette.mode === 'dark'
@@ -1230,9 +1268,9 @@ const AdminPortal = () => {
                 </TableCell>
               </TableRow>
             </TableHead>
-            <TableBody>
+            <TableBody key={refreshKey}>
               {admins.map((admin, index) => (
-                <TableRow key={admin.id} hover sx={{
+                <TableRow key={`${admin.id}-${refreshKey}`} hover sx={{
                   backgroundColor: theme.palette.mode === 'dark'
                     ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
                     : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'),
@@ -1495,15 +1533,15 @@ const AdminPortal = () => {
                 margin="normal"
                 required
               >
-                <option value="">Select Patient</option>
+                <MenuItem value="">Select Patient</MenuItem>
                 {patients && patients.length > 0 ? (
                   patients.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.fullName}
-                    </option>
+                    <MenuItem key={p.id} value={p.id}>
+                      {p.fullName || p.user?.name || 'Unknown'}
+                    </MenuItem>
                   ))
                 ) : (
-                  <option disabled>No patients available</option>
+                  <MenuItem disabled>No patients available</MenuItem>
                 )}
               </TextField>
               <TextField
@@ -1515,15 +1553,15 @@ const AdminPortal = () => {
                 margin="normal"
                 required
               >
-                <option value="">Select Therapist</option>
+                <MenuItem value="">Select Therapist</MenuItem>
                 {therapists && therapists.length > 0 ? (
                   therapists.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
+                    <MenuItem key={t.id} value={t.id}>
+                      {t.name || t.user?.name || 'Unknown'}
+                    </MenuItem>
                   ))
                 ) : (
-                  <option disabled>No therapists available</option>
+                  <MenuItem disabled>No therapists available</MenuItem>
                 )}
               </TextField>
               <TextField
@@ -1671,6 +1709,15 @@ const AdminPortal = () => {
                 <MenuItem value="Female">{language === 'ar' ? 'أنثى' : 'Female'}</MenuItem>
                 <MenuItem value="Other">{language === 'ar' ? 'آخر' : 'Other'}</MenuItem>
               </TextField>
+              <TextField
+                fullWidth
+                type="number"
+                label={language === 'ar' ? 'العمر' : 'Age'}
+                value={formData.age || ''}
+                onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) || '' })}
+                margin="normal"
+                inputProps={{ min: 0, max: 150 }}
+              />
               <TextField
                 fullWidth
                 label={language === 'ar' ? 'كلمة المرور' : 'Password'}

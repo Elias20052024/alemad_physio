@@ -8,8 +8,7 @@ export const getAllPatients = async (req, res) => {
   try {
     const patients = await prisma.patient.findMany({
       include: { 
-        user: true,
-        appointments: true 
+        user: true
       }
     });
     res.json(patients || []);
@@ -26,11 +25,7 @@ export const getPatientById = async (req, res) => {
     const patient = await prisma.patient.findUnique({
       where: { id: parseInt(id) },
       include: {
-        user: true,
-        appointments: {
-          include: { therapist: true },
-          orderBy: { appointmentDate: 'desc' }
-        }
+        user: true
       }
     });
 
@@ -118,7 +113,7 @@ export const createPatient = async (req, res) => {
 export const updatePatient = async (req, res) => {
   try {
     const { id } = req.params;
-    const { fullName, phone, gender, age, medicalHistory, password, status } = req.body;
+    const { fullName, phone, email, gender, age, medicalHistory, password, status } = req.body;
 
     // Get the patient with user info
     const patient = await prisma.patient.findUnique({
@@ -166,6 +161,21 @@ export const updatePatient = async (req, res) => {
         data: { name: fullName.trim() }
       });
       updatedPatient.user.name = fullName.trim();
+    }
+
+    // Update email if provided
+    if (email) {
+      // Check if email already exists (and it's not the current user's email)
+      const existingUser = await prisma.user.findUnique({ where: { email } });
+      if (existingUser && existingUser.id !== patient.userId) {
+        return res.status(409).json({ message: 'Email already registered' });
+      }
+      
+      await prisma.user.update({
+        where: { id: patient.userId },
+        data: { email: email.trim() }
+      });
+      updatedPatient.user.email = email.trim();
     }
 
     // Update password if provided
