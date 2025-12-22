@@ -122,9 +122,9 @@ const NotificationCenter = () => {
       {/* Notification Dialog */}
       <Dialog open={open} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+          <Box sx={{ fontWeight: 'bold', fontSize: '1.25rem' }}>
             {language === 'ar' ? 'الإشعارات' : 'Notifications'}
-          </Typography>
+          </Box>
           <IconButton size="small" onClick={handleCloseDialog}>
             <CloseIcon />
           </IconButton>
@@ -173,7 +173,35 @@ const NotificationCenter = () => {
                           <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
                             {notification.message}
                           </Typography>
-                          <Typography variant="caption" color="textSecondary">
+                          
+                          {/* Display booking details if available */}
+                          {notification.appointment && (
+                            <Box sx={{ mt: 2, p: 1.5, backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+                              <Typography variant="caption" sx={{ display: 'block', fontWeight: 'bold', mb: 1 }}>
+                                {language === 'ar' ? 'تفاصيل الحجز:' : 'Booking Details:'}
+                              </Typography>
+                              
+                              {notification.appointment.startTime && (
+                                <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                                  <strong>{language === 'ar' ? 'الوقت:' : 'Time:'}</strong> {notification.appointment.startTime}
+                                </Typography>
+                              )}
+                              
+                              {notification.appointment.therapist?.specialization && (
+                                <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                                  <strong>{language === 'ar' ? 'الخدمة:' : 'Service:'}</strong> {notification.appointment.therapist.specialization}
+                                </Typography>
+                              )}
+                              
+                              {notification.appointment.notes && (
+                                <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                                  <strong>{language === 'ar' ? 'ملاحظات:' : 'Notes:'}</strong> {notification.appointment.notes}
+                                </Typography>
+                              )}
+                            </Box>
+                          )}
+                          
+                          <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 1 }}>
                             {new Date(notification.createdAt).toLocaleString()}
                           </Typography>
                           {notification.status === 'pending' && (

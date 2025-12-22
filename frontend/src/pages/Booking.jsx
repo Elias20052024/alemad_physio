@@ -37,8 +37,10 @@ const Booking = () => {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    email: '',
     service: '',
     date: '',
+    time: '',
     message: '',
   });
   const [loading, setLoading] = useState(false);
@@ -67,8 +69,10 @@ const Booking = () => {
         body: JSON.stringify({
           name: formData.name,
           phone: formData.phone,
+          email: formData.email,
           service: formData.service,
           date: formData.date,
+          time: formData.time,
           message: formData.message,
         }),
       });
@@ -80,7 +84,7 @@ const Booking = () => {
 
       setMessageType('success');
       setMessage(t('booking.success') || 'Booking successful! Admin will review and contact you soon.');
-      setFormData({ name: '', phone: '', service: '', date: '', message: '' });
+      setFormData({ name: '', phone: '', email: '', service: '', date: '', time: '', message: '' });
     } catch (error) {
       setMessageType('error');
       setMessage(error.message || t('booking.error') || 'Error booking appointment');
@@ -146,6 +150,19 @@ const Booking = () => {
           size="small"
         />
 
+        <TextField
+          label={t('booking.email')}
+          name="email"
+          value={formData.email}
+          onChange={handleInputChange}
+          fullWidth
+          variant="outlined"
+          type="email"
+          size="small"
+          placeholder="Optional"
+          helperText="Optional - for appointment confirmations"
+        />
+
         <FormControl fullWidth required size="small">
           <InputLabel>{t('booking.service')}</InputLabel>
           <Select
@@ -173,6 +190,19 @@ const Booking = () => {
           required
           fullWidth
           type="date"
+          InputLabelProps={{ shrink: true }}
+          variant="outlined"
+          size="small"
+        />
+
+        <TextField
+          label={t('booking.time')}
+          name="time"
+          value={formData.time}
+          onChange={handleInputChange}
+          required
+          fullWidth
+          type="time"
           InputLabelProps={{ shrink: true }}
           variant="outlined"
           size="small"

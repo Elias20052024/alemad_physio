@@ -172,6 +172,7 @@
     "time": "Time",
     "service": "Service",
     "therapist": "Select Therapist",
+    "message": "Additional Notes",
     "submit": "Book Appointment",
     "success": "Appointment booked successfully! Redirecting...",
     "error": "Failed to book appointment. Please try again.",

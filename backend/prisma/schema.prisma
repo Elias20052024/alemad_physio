@@ -70,10 +70,12 @@ model Admin {
 model Appointment {
   id            Int     @id @default(autoincrement())
   patientId     Int
-  therapistId   Int
+  therapistId   Int?    // Optional - therapist can be assigned later
   appointmentDate DateTime
   startTime     String
   endTime       String
+  email         String? // Optional email for booking
+  phone         String? // Optional phone for booking
   status        String  @default("pending") // pending, confirmed, completed, cancelled
   notes         String?
   createdAt     DateTime @default(now())
@@ -81,7 +83,7 @@ model Appointment {
 
   // Relations
   patient       Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  therapist     Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  therapist     Therapist? @relation(fields: [therapistId], references: [id], onDelete: SetNull)
   notifications Notification[]
 
   @@index([patientId])
@@ -103,8 +105,10 @@ model Booking {
   id            Int     @id @default(autoincrement())
   name          String
   phone         String
+  email         String? // Optional email
   service       String
   date          DateTime
+  time          String? // Appointment time (e.g., "09:00", "14:30")
   message       String?
   status        String  @default("pending") // pending, confirmed, completed, cancelled
   createdAt     DateTime @default(now())
