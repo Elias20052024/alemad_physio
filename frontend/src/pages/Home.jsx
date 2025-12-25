@@ -84,7 +84,7 @@ const Home = () => {
     }
   `;
 
-  const whatsappNumber = '962795702165'; // AL-Emad WhatsApp number
+  const whatsappNumber = '962795520905'; // AL-Emad WhatsApp number
   const whatsappMessage = encodeURIComponent('Hello! I would like to inquire about your services.');
   const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 

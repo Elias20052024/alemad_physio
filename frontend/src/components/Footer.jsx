@@ -50,7 +50,7 @@ const Footer = () => {
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, minHeight: '32px' }}>
               <Phone sx={{ mr: 1, fontSize: { xs: 16, sm: 18 } }} />
-              <Link href="tel:+962795702165" color="inherit" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, wordBreak: 'break-word' }}>
+              <Link href="tel:+962795520905" color="inherit" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, wordBreak: 'break-word' }}>
                 +962 7 9570 2165
               </Link>
             </Box>
@@ -68,7 +68,7 @@ const Footer = () => {
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, minHeight: '32px' }}>
               <WhatsApp sx={{ mr: 1, fontSize: { xs: 16, sm: 18 } }} />
-              <Link href="https://wa.me/962795702165" color="inherit" target="_blank" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, wordBreak: 'break-word' }}>
+              <Link href="https://wa.me/962795520905" color="inherit" target="_blank" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, wordBreak: 'break-word' }}>
                 +962 7 9570 2165
               </Link>
             </Box>

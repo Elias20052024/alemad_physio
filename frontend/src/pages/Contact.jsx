@@ -15,7 +15,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { keyframes } from '@emotion/react';
 
 const Contact = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const theme = useTheme();
 
   // Animation keyframes
@@ -50,19 +50,19 @@ const Contact = () => {
   const contactInfo = [
     {
       icon: <Phone sx={{ fontSize: 40, color: '#1C6FB5' }} />,
-      title: 'Phone Numbers',
+      title: language === 'ar' ? 'أرقام الهاتف' : 'Phone Numbers',
       value: phones,
-      link: 'tel:+962795702165',
+      link: 'tel:+962795520905',
     },
     {
       icon: <WhatsApp sx={{ fontSize: 40, color: '#25D366' }} />,
-      title: 'WhatsApp',
+      title: language === 'ar' ? 'واتساب' : 'WhatsApp',
       value: whatsapp,
-      link: `https://wa.me/962795702165?text=Hello%20AL-Emad%20Center`,
+      link: `https://wa.me/962795520905?text=Hello%20AL-Emad%20Center`,
     },
     {
       icon: <LocationOn sx={{ fontSize: 40, color: '#74C3E7' }} />,
-      title: 'Location',
+      title: language === 'ar' ? 'العنوان' : 'Location',
       value: location,
       link: '#',
     },
@@ -198,7 +198,7 @@ const Contact = () => {
               }}
             >
               <Typography variant="h5" sx={{ color: '#1C6FB5', fontWeight: 'bold', mb: 3, fontSize: { xs: '1.1rem', md: '1.25rem' } }}>
-                📍 Location Map
+                📍 {language === 'ar' ? 'خريطة الموقع' : 'Location Map'}
               </Typography>
               <Box
                 component="iframe"
@@ -230,16 +230,16 @@ const Contact = () => {
               }}
             >
               <Typography variant="h5" sx={{ color: '#1C6FB5', fontWeight: 'bold', mb: 3, fontSize: { xs: '1.1rem', md: '1.25rem' } }}>
-                ⏰ Business Hours
+                ⏰ {language === 'ar' ? 'ساعات العمل' : 'Business Hours'}
               </Typography>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="body1" sx={{ fontSize: { xs: '0.95rem', md: '1rem' }, color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333' }}>
-                  <strong>Saturday - Thursday:</strong> 9:30 AM - 7:00 PM
+                  <strong>{language === 'ar' ? 'السبت - الخميس:' : 'Saturday - Thursday:'}</strong> {language === 'ar' ? '9:30 ص - 7:00 م' : '9:30 AM - 7:00 PM'}
                 </Typography>
               </Box>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="body1" sx={{ fontSize: { xs: '0.95rem', md: '1rem' }, color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333' }}>
-                  <strong>Friday:</strong> Closed
+                  <strong>{language === 'ar' ? 'الجمعة:' : 'Friday:'}</strong> {language === 'ar' ? 'مغلق' : 'Closed'}
                 </Typography>
               </Box>
               

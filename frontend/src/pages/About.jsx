@@ -13,7 +13,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { keyframes } from '@emotion/react';
 
 const About = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const theme = useTheme();
 
   // Animation keyframes
@@ -77,7 +77,7 @@ const About = () => {
         {/* Vision */}
         <Box sx={{ mb: { xs: 4, md: 6 }, p: { xs: 2, md: 3 }, backgroundColor: theme.palette.mode === 'dark' ? '#2d3d4d' : '#f5f5f5', borderRadius: 2, borderLeft: '5px solid #1C6FB5', animation: `${fadeInUp} 0.8s ease 0.2s both` }}>
           <Typography variant="h4" sx={{ color: '#1C6FB5', mb: 2, fontSize: { xs: '1.3rem', md: '1.5rem' } }}>
-            Our Vision
+            {language === 'ar' ? 'رؤيتنا' : 'Our Vision'}
           </Typography>
           <Typography variant="body1" sx={{ fontSize: { xs: '0.95rem', md: '1.1rem' }, lineHeight: 1.8, color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333' }}>
             {t('about.vision')}
@@ -87,7 +87,7 @@ const About = () => {
         {/* Values */}
         <Box sx={{ mb: { xs: 4, md: 6 }, animation: `${fadeInUp} 0.8s ease 0.4s both` }}>
           <Typography variant="h4" sx={{ color: '#1C6FB5', mb: 3, fontSize: { xs: '1.3rem', md: '1.5rem' } }}>
-            Our Values & Principles
+            {language === 'ar' ? 'قيمنا والمبادئ الأساسية' : 'Our Values & Principles'}
           </Typography>
           <Typography variant="body1" sx={{ fontSize: { xs: '0.95rem', md: '1rem' }, lineHeight: 1.8, color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333' }}>
             {t('about.values')}
