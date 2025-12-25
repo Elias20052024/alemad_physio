@@ -103,8 +103,10 @@ model Booking {
   id            Int     @id @default(autoincrement())
   name          String
   phone         String
+  age           Int?    // Age of the patient
   service       String
   date          DateTime
+  time          String?  // Time for the booking (HH:MM format)
   message       String?
   status        String  @default("pending") // pending, confirmed, completed, cancelled
   createdAt     DateTime @default(now())

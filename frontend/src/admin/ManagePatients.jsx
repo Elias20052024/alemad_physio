@@ -22,7 +22,7 @@ import {
   Snackbar,
   Alert,
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon, WhatsApp as WhatsAppIcon } from '@mui/icons-material';
 import { patientService } from '@services/apiService.js';
 
 const ManagePatients = () => {
@@ -179,6 +179,17 @@ const ManagePatients = () => {
                 <TableCell>{patient.age || 'N/A'}</TableCell>
                 <TableCell>{patient.gender}</TableCell>
                 <TableCell align="center">
+                  <Tooltip title="WhatsApp">
+                    <IconButton
+                      size="small"
+                      color="success"
+                      href={`https://wa.me/${patient.phone.replace(/[^\d+]/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <WhatsAppIcon />
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title="Edit">
                     <IconButton
                       size="small"

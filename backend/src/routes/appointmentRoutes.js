@@ -21,6 +21,6 @@ router.post('/', createAppointment);
 // Update appointment (public - therapists and admins can update)
 router.put('/:id', updateAppointment);
 router.patch('/:id/cancel', cancelAppointment);
-router.delete('/:id', authenticateAdmin, deleteAppointment);
+router.delete('/:id', deleteAppointment);
 
 export default router;

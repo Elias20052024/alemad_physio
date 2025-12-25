@@ -143,7 +143,7 @@ const PatientDashboardDB = () => {
               <Typography color="textSecondary" gutterBottom>
                 🎂 {language === 'ar' ? 'السن' : 'Age'}
               </Typography>
-              <Typography variant="h6">{patientData?.dateOfBirth ? new Date().getFullYear() - new Date(patientData.dateOfBirth).getFullYear() : 'N/A'} {patientData?.dateOfBirth ? (language === 'ar' ? 'سنة' : 'years') : ''}</Typography>
+              <Typography variant="h6">{patientData?.age || 'N/A'} {patientData?.age ? (language === 'ar' ? 'سنة' : 'years') : ''}</Typography>
             </CardContent>
           </Card>
         </Grid>

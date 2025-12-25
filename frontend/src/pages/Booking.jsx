@@ -17,7 +17,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { keyframes } from '@emotion/react';
 
 const Booking = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const theme = useTheme();
 
   console.log('✅ Booking component loaded successfully');
@@ -70,6 +70,7 @@ const Booking = () => {
           name: formData.name,
           phone: formData.phone,
           email: formData.email,
+          age: formData.age,
           service: formData.service,
           date: formData.date,
           time: formData.time,
@@ -84,7 +85,7 @@ const Booking = () => {
 
       setMessageType('success');
       setMessage(t('booking.success') || 'Booking successful! Admin will review and contact you soon.');
-      setFormData({ name: '', phone: '', email: '', service: '', date: '', time: '', message: '' });
+      setFormData({ name: '', phone: '', email: '', age: '', service: '', date: '', time: '', message: '' });
     } catch (error) {
       setMessageType('error');
       setMessage(error.message || t('booking.error') || 'Error booking appointment');
@@ -161,6 +162,18 @@ const Booking = () => {
           size="small"
           placeholder="Optional"
           helperText="Optional - for appointment confirmations"
+        />
+
+        <TextField
+          label={language === 'ar' ? 'العمر' : 'Age'}
+          name="age"
+          value={formData.age || ''}
+          onChange={handleInputChange}
+          fullWidth
+          variant="outlined"
+          type="number"
+          size="small"
+          inputProps={{ min: '1', max: '150' }}
         />
 
         <FormControl fullWidth required size="small">

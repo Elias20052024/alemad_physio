@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Container, Box, Typography, Card, CardContent, Grid, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, MenuItem, IconButton, InputAdornment, Menu, Avatar, Select, useTheme, FormControl, InputLabel } from '@mui/material';
-import { LogoutSharp, Edit, Delete, Add as AddIcon, Visibility, VisibilityOff, MoreVert } from '@mui/icons-material';
+import { LogoutSharp, Edit, Delete, Add as AddIcon, Visibility, VisibilityOff, MoreVert, WhatsApp as WhatsAppIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useLoading } from '../context/LoadingContext';
@@ -255,16 +255,21 @@ const AdminPortal = () => {
           console.log('📅 Fetched appointments from API:', appointmentsResponse.data);
 
           // Format appointments to include patient and therapist names
-          const formattedAppointments = (appointmentsResponse.data || []).map(apt => ({
-            id: apt.id,
-            patientName: apt.patient?.user?.name || apt.patient?.fullName || 'Unknown',
-            therapistName: apt.therapist?.user?.name || apt.therapist?.name || 'Unknown',
-            date: apt.appointmentDate ? new Date(apt.appointmentDate).toLocaleDateString() : 'N/A',
-            time: apt.startTime || 'N/A',
-            status: (apt.status || 'pending').trim(),
-            ...apt
-          }));
+          const formattedAppointments = (appointmentsResponse.data || []).map((apt, idx) => {
+            const formatted = {
+              id: apt.id,
+              patientName: apt.patient?.user?.name || apt.patient?.fullName || 'Unknown',
+              therapistName: apt.therapist?.user?.name || apt.therapist?.name || (apt.therapistId ? 'Unassigned' : 'No Therapist'),
+              date: apt.appointmentDate ? new Date(apt.appointmentDate).toLocaleDateString() : 'N/A',
+              time: apt.startTime || 'N/A',
+              status: (apt.status || 'pending').trim(),
+              ...apt
+            };
+            console.log(`📍 Appointment ${idx}:`, formatted);
+            return formatted;
+          });
 
+          console.log('✅ Setting appointments:', formattedAppointments);
           setAppointments(formattedAppointments);
         } catch (error) {
           console.error('Error fetching appointments:', error);
@@ -283,6 +288,43 @@ const AdminPortal = () => {
     }
   }, [token]);
 
+  // Function to refresh appointments
+  const refreshAppointments = async () => {
+    console.log('🔄 Refreshing appointments...');
+    try {
+      const appointmentsResponse = await axios.get(`${API_BASE_URL}/appointments`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log('📅 Raw appointments from API:', appointmentsResponse.data);
+
+      if (!appointmentsResponse.data || appointmentsResponse.data.length === 0) {
+        console.warn('⚠️ No appointments returned from API');
+        setAppointments([]);
+        return;
+      }
+
+      // Format appointments to include patient and therapist names
+      const formattedAppointments = (appointmentsResponse.data || []).map((apt, idx) => {
+        const formatted = {
+          id: apt.id,
+          patientName: apt.patient?.user?.name || apt.patient?.fullName || 'Unknown',
+          therapistName: apt.therapist?.user?.name || apt.therapist?.name || (apt.therapistId ? 'Unassigned' : 'No Therapist'),
+          date: apt.appointmentDate ? new Date(apt.appointmentDate).toLocaleDateString() : 'N/A',
+          time: apt.startTime || 'N/A',
+          status: (apt.status || 'pending').trim(),
+          ...apt
+        };
+        console.log(`📍 Appointment ${idx}:`, formatted);
+        return formatted;
+      });
+
+      console.log('✅ Total appointments to display:', formattedAppointments.length);
+      setAppointments(formattedAppointments);
+    } catch (error) {
+      console.error('❌ Error refreshing appointments:', error);
+      setAppointments([]);
+    }
+  };
   // Initialize appointments as empty array - will be fetched from database
   const [appointments, setAppointments] = useState(() => {
     // Don't use localStorage for appointments - always fetch from database
@@ -318,7 +360,24 @@ const AdminPortal = () => {
 
     // Load patient bookings once on mount
     loadPatientBookings();
-  }, []); const handleOpenAddDialog = (type) => {
+  }, []);
+
+  // Listen for appointment creation event from NotificationCenter
+  useEffect(() => {
+    const handleAppointmentCreated = () => {
+      console.log('🔔 Appointment created event received from NotificationCenter');
+      refreshAppointments();
+    };
+
+    window.addEventListener('appointmentCreated', handleAppointmentCreated);
+    console.log('✅ Registered appointmentCreated event listener');
+    
+    return () => {
+      window.removeEventListener('appointmentCreated', handleAppointmentCreated);
+      console.log('❌ Unregistered appointmentCreated event listener');
+    };
+  }, [token]);
+ const handleOpenAddDialog = (type) => {
     setDialogType(type);
     if (type === 'therapist') {
       setFormData({ name: '', specialty: '', email: '', phone: '', password: '' });
@@ -1025,6 +1084,16 @@ const AdminPortal = () => {
                     </Select>
                   </TableCell>
                   <TableCell>
+                    <IconButton
+                      size="small"
+                      color="success"
+                      href={`https://api.whatsapp.com/send?phone=${patient.phone}&text=%D9%85%D8%B1%D9%83%D8%B2%20%D8%A7%D9%84%D8%B9%D9%85%D8%A7%D8%AF%20%D9%84%D9%84%D8%B9%D9%84%D8%A7%D8%AC%20%D8%A7%D9%84%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%20%D9%88%D8%A7%D9%84%D8%AA%D8%A3%D9%87%D9%8A%D9%84%20%D9%8A%D8%B1%D8%AD%D8%A8%20%D8%A8%D9%83%D9%85%D8%8C%20%D9%88%D9%8A%D9%88%D8%AF%D9%91%20%D8%A7%D9%84%D8%AA%D8%A3%D9%83%D9%8A%D8%AF%20%D8%B9%D9%84%D9%89%20%D9%85%D9%88%D8%B9%D8%AF%20%D8%AC%D9%84%D8%B3%D8%A9%20%D8%A7%D9%84%D8%B9%D9%84%D8%A7%D8%AC:%20%F0%9F%95%92%20%D8%A7%D9%84%D8%B3%D8%A7%D8%B9%D8%A9:%2011:30%20%F0%9F%93%85%20%D8%A7%D9%84%D9%8A%D9%88%D9%85:%20(%D9%85%D8%AB%D8%A7%D9%84:%20%D8%A7%D9%84%D8%A7%D8%AB%D9%86%D9%8A%D9%86)%20%F0%9F%93%86%20%D8%A7%D9%84%D8%AA%D8%A7%D8%B1%D9%8A%D8%AE:%20(%D9%85%D8%AB%D8%A7%D9%84:%2025%20/%2012%20/%202025)%20%D8%B1%D8%A7%D8%AC%D9%8A%D9%86%20%D9%85%D9%86%D9%83%D9%85%20%D8%A7%D9%84%D8%A7%D9%84%D8%AA%D8%B2%D8%A7%D9%85%20%D8%A8%D8%A7%D9%84%D9%85%D9%88%D8%B9%D8%AF.%20%D8%B4%D8%A7%D9%83%D8%B1%D9%8A%D9%86%20%D8%AB%D9%82%D8%AA%D9%83%D9%85%20%D9%88%D8%A7%D8%AE%D8%AA%D9%8A%D8%A7%D8%B1%D9%83%D9%85%20%D9%84%D9%86%D8%A7`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{ mr: 1 }}
+                    >
+                      <WhatsAppIcon />
+                    </IconButton>
                     <Button size="small" startIcon={<Edit />} sx={{ mr: 1, color: '#1C6FB5' }} onClick={() => handleOpenEditDialog('patient', patient)}>
                       {language === 'ar' ? 'تعديل' : 'Edit'}
                     </Button>
@@ -1155,7 +1224,20 @@ const AdminPortal = () => {
               </TableRow>
             </TableHead>
             <TableBody key={refreshKey}>
-              {appointments.map((appointment, index) => (
+              {(() => {
+                console.log('🎯 Rendering appointments table, appointments.length:', appointments?.length || 0, 'appointments:', appointments);
+                
+                if (!appointments || appointments.length === 0) {
+                  return (
+                    <TableRow>
+                      <TableCell colSpan={6} sx={{ textAlign: 'center', py: 3, color: '#999' }}>
+                        {language === 'ar' ? 'لا توجد مواعيد' : 'No appointments found'}
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
+                
+                return appointments.map((appointment, index) => (
                 <TableRow key={`${appointment.id}-${appointment.type || 'admin'}-${refreshKey}`} hover sx={{
                   backgroundColor: appointment.status === 'cancelled'
                     ? (theme.palette.mode === 'dark' ? '#4a2a2a' : '#ffe6e6')
@@ -1235,7 +1317,8 @@ const AdminPortal = () => {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+              ));
+              })()}
             </TableBody>
           </Table>
         </TableContainer>

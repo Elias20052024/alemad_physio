@@ -32,7 +32,9 @@ apiClient.interceptors.response.use(
   error => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      window.location.href = '/admin/login';
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('isLoggedIn');
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

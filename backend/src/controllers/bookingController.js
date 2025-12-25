@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 export const createBooking = async (req, res) => {
   try {
-    const { name, phone, email, service, date, time, message } = req.body;
+    const { name, phone, email, service, date, time, age, message } = req.body;
 
     // Validation
     if (!name || !phone || !date) {
@@ -15,9 +15,12 @@ export const createBooking = async (req, res) => {
       });
     }
 
-    // Validate date is in future
+    // Validate date is in future (allow today and onwards)
     const bookingDate = new Date(date);
-    if (bookingDate < new Date()) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+    
+    if (bookingDate < today) {
       return res.status(400).json({
         success: false,
         message: 'Booking date must be in the future',
@@ -29,8 +32,10 @@ export const createBooking = async (req, res) => {
       data: {
         name,
         phone,
+        age: age ? parseInt(age) : null,  // Save the age if provided
         service,
         date: bookingDate,
+        time: time || null,  // Save the time if provided
         message: message || null,
         status: 'pending',
       },

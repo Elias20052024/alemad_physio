@@ -151,7 +151,9 @@ const Login = () => {
 
         try {
           // Call API to login patient
+          console.log('🔐 Attempting patient login with:', { email, password: '***' });
           const { data } = await patientAPI.login(email, password);
+          console.log('✅ Patient login response:', data);
           
           // Store token and patient info
           localStorage.setItem('token', data.token);
@@ -161,10 +163,12 @@ const Login = () => {
           localStorage.setItem('userEmail', data.patient.email);
           localStorage.setItem('isLoggedIn', 'true');
 
+          console.log('✅ localStorage updated, navigating to patient dashboard');
           setError('');
           setLoading(false);
           navigate('/patient-dashboard');
         } catch (err) {
+          console.error('❌ Patient login error:', err.response?.data || err.message);
           setError(err.response?.data?.message || 'Login failed. Please try again.');
           setLoading(false);
         }

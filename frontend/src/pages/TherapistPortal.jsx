@@ -20,6 +20,8 @@ const TherapistPortal = () => {
   const [loading, setLoading] = useState(true);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [viewDetailsOpen, setViewDetailsOpen] = useState(false);
+  const [editNotesOpen, setEditNotesOpen] = useState(false);
+  const [editingNotes, setEditingNotes] = useState('');
   const [profileData, setProfileData] = useState({
     name: localStorage.getItem('userName') || 'Therapist',
     email: localStorage.getItem('userEmail') || '',
@@ -99,6 +101,32 @@ const TherapistPortal = () => {
     }
   };
 
+  const handleOpenEditNotes = () => {
+    if (selectedAppointment) {
+      setEditingNotes(selectedAppointment.notes || '');
+      setEditNotesOpen(true);
+    }
+  };
+
+  const handleSaveNotes = async () => {
+    try {
+      const updatedAppointment = { ...selectedAppointment, notes: editingNotes };
+      await apiClient.put(`/appointments/${selectedAppointment.id}`, { notes: editingNotes });
+      setAppointments(appointments.map(apt => 
+        apt.id === selectedAppointment.id ? updatedAppointment : apt
+      ));
+      setSelectedAppointment(updatedAppointment);
+      setEditNotesOpen(false);
+    } catch (error) {
+      console.error('Error updating notes:', error);
+    }
+  };
+
+  const handleCloseEditNotes = () => {
+    setEditNotesOpen(false);
+    setEditingNotes('');
+  };
+
   const handleViewDetails = (appointment) => {
     setSelectedAppointment(appointment);
     setViewDetailsOpen(true);
@@ -148,13 +176,15 @@ const TherapistPortal = () => {
   const filteredAppointments = appointments.filter(apt => {
     if (tabValue === 0) return true; // All appointments
     if (tabValue === 1) return apt.status === 'pending'; // Pending only
+    if (tabValue === 2) return true; // Patient notes - show all
     return true;
   });
 
   // Calculate stats
   const todayAppointments = appointments.filter(apt => {
     const today = new Date().toISOString().split('T')[0];
-    return apt.appointmentDate === today;
+    const appointmentDateStr = new Date(apt.appointmentDate).toISOString().split('T')[0];
+    return appointmentDateStr === today;
   }).length;
 
   const pendingAppointments = appointments.filter(apt => apt.status === 'pending').length;
@@ -332,15 +362,44 @@ const TherapistPortal = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        {appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
+                        {tabValue === 2 ? (
+                          // Patient Notes tab - show only Notes button
                           <Button 
                             size="small" 
                             variant="contained"
-                            sx={{ bgcolor: '#4caf50', '&:hover': { bgcolor: '#45a049' } }}
-                            onClick={() => handleCompleteAppointment(appointment.id)}
+                            sx={{ bgcolor: '#1C6FB5', '&:hover': { bgcolor: '#154A88' } }}
+                            onClick={() => {
+                              setSelectedAppointment(appointment);
+                              setEditingNotes(appointment.notes || '');
+                              setEditNotesOpen(true);
+                            }}
                           >
-                            {language === 'ar' ? 'إنهاء' : 'Complete'}
+                            {language === 'ar' ? 'ملاحظات' : 'Notes'}
                           </Button>
+                        ) : (
+                          // Other tabs - show Details and Complete buttons
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button 
+                              size="small" 
+                              variant="outlined"
+                              onClick={() => {
+                                setSelectedAppointment(appointment);
+                                setViewDetailsOpen(true);
+                              }}
+                            >
+                              {language === 'ar' ? 'التفاصيل' : 'Details'}
+                            </Button>
+                            {appointment.status !== 'completed' && appointment.status !== 'cancelled' && appointment.status !== 'pending' && (
+                              <Button 
+                                size="small" 
+                                variant="contained"
+                                sx={{ bgcolor: '#4caf50', '&:hover': { bgcolor: '#45a049' } }}
+                                onClick={() => handleCompleteAppointment(appointment.id)}
+                              >
+                                {language === 'ar' ? 'إنهاء' : 'Complete'}
+                              </Button>
+                            )}
+                          </Box>
                         )}
                       </TableCell>
                     </TableRow>
@@ -513,7 +572,9 @@ const TherapistPortal = () => {
                 <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1C6FB5' }}>
                   {language === 'ar' ? 'الملاحظات' : 'Notes'}
                 </Typography>
-                <Typography>{selectedAppointment.notes || 'No notes'}</Typography>
+                <Typography sx={{ mt: 1, p: 1, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                  {selectedAppointment.notes || 'No notes'}
+                </Typography>
               </Box>
             </Box>
           )}
@@ -521,6 +582,33 @@ const TherapistPortal = () => {
         <DialogActions>
           <Button onClick={handleCloseDetails}>
             {language === 'ar' ? 'إغلاق' : 'Close'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Notes Dialog */}
+      <Dialog open={editNotesOpen} onClose={handleCloseEditNotes} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {language === 'ar' ? 'تعديل الملاحظات' : 'Edit Notes'}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <TextField
+            fullWidth
+            multiline
+            rows={6}
+            label={language === 'ar' ? 'ملاحظات' : 'Notes'}
+            value={editingNotes}
+            onChange={(e) => setEditingNotes(e.target.value)}
+            placeholder={language === 'ar' ? 'أضف ملاحظاتك هنا...' : 'Add your notes here...'}
+            variant="outlined"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEditNotes}>
+            {language === 'ar' ? 'إلغاء' : 'Cancel'}
+          </Button>
+          <Button onClick={handleSaveNotes} variant="contained" color="primary">
+            {language === 'ar' ? 'حفظ' : 'Save'}
           </Button>
         </DialogActions>
       </Dialog>

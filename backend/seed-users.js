@@ -194,46 +194,127 @@ async function seedUsers() {
         data: {
           userId: patientUsers[0].id,
           phone: '+966501234567',
-          gender: 'Male'
+          gender: 'Male',
+          age: 35
         }
       }),
       prisma.patient.create({
         data: {
           userId: patientUsers[1].id,
           phone: '+966502345678',
-          gender: 'Male'
+          gender: 'Male',
+          age: 42
         }
       }),
       prisma.patient.create({
         data: {
           userId: patientUsers[2].id,
           phone: '+966503456789',
-          gender: 'Female'
+          gender: 'Female',
+          age: 28
         }
       }),
       prisma.patient.create({
         data: {
           userId: patientUsers[3].id,
           phone: '+966504567890',
-          gender: 'Male'
+          gender: 'Male',
+          age: 55
         }
       }),
       prisma.patient.create({
         data: {
           userId: patientUsers[4].id,
           phone: '+966505678901',
-          gender: 'Female'
+          gender: 'Female',
+          age: 31
         }
       }),
       prisma.patient.create({
         data: {
           userId: patientUsers[5].id,
           phone: '+966506789012',
-          gender: 'Male'
+          gender: 'Male',
+          age: 48
         }
       })
     ]);
     console.log(`✅ ${patients.length} patients created`);
+
+    // Create Appointments
+    console.log('📅 Creating appointments...');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const appointments = await Promise.all([
+      prisma.appointment.create({
+        data: {
+          patientId: patients[0].id,
+          therapistId: therapists[0].id,
+          appointmentDate: today,
+          startTime: '10:00',
+          endTime: '11:00',
+          status: 'pending',
+          notes: 'Initial consultation'
+        }
+      }),
+      prisma.appointment.create({
+        data: {
+          patientId: patients[1].id,
+          therapistId: therapists[1].id,
+          appointmentDate: today,
+          startTime: '14:00',
+          endTime: '15:00',
+          status: 'scheduled',
+          notes: 'Follow-up session'
+        }
+      }),
+      prisma.appointment.create({
+        data: {
+          patientId: patients[2].id,
+          therapistId: therapists[0].id,
+          appointmentDate: today,
+          startTime: '15:00',
+          endTime: '16:00',
+          status: 'completed',
+          notes: 'Session completed successfully'
+        }
+      }),
+      prisma.appointment.create({
+        data: {
+          patientId: patients[3].id,
+          therapistId: therapists[2].id,
+          appointmentDate: new Date(today.getTime() + 86400000), // Tomorrow
+          startTime: '10:00',
+          endTime: '11:00',
+          status: 'scheduled',
+          notes: 'Scheduled for tomorrow'
+        }
+      }),
+      prisma.appointment.create({
+        data: {
+          patientId: patients[4].id,
+          therapistId: therapists[3].id,
+          appointmentDate: new Date(today.getTime() + 172800000), // Day after tomorrow
+          startTime: '11:00',
+          endTime: '12:00',
+          status: 'pending',
+          notes: 'Awaiting confirmation'
+        }
+      }),
+      prisma.appointment.create({
+        data: {
+          patientId: patients[5].id,
+          therapistId: therapists[4].id,
+          appointmentDate: today,
+          startTime: '09:00',
+          endTime: '10:00',
+          status: 'completed',
+          notes: 'Session notes'
+        }
+      })
+    ]);
+    console.log(`✅ ${appointments.length} appointments created`);
 
     console.log('\n✅ Database seeded successfully!');
     console.log('\n📋 Test Credentials:');

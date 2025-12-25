@@ -79,17 +79,20 @@ export const createAppointment = async (req, res) => {
   try {
     const { therapistId, patientId, appointmentDate, startTime, endTime, status = 'pending', notes, isFromBookingForm } = req.body;
 
-    if (!therapistId || !patientId || !appointmentDate || !startTime || !endTime) {
-      return res.status(400).json({ message: 'All required fields must be provided: therapistId, patientId, appointmentDate, startTime, endTime' });
+    // Therapist ID is optional - can be assigned later
+    if (!patientId || !appointmentDate || !startTime || !endTime) {
+      return res.status(400).json({ message: 'All required fields must be provided: patientId, appointmentDate, startTime, endTime' });
     }
 
-    // Verify therapist exists
-    const therapist = await prisma.therapist.findUnique({
-      where: { id: parseInt(therapistId) }
-    });
+    // Verify therapist exists if provided
+    if (therapistId) {
+      const therapist = await prisma.therapist.findUnique({
+        where: { id: parseInt(therapistId) }
+      });
 
-    if (!therapist) {
-      return res.status(404).json({ message: 'Therapist not found' });
+      if (!therapist) {
+        return res.status(404).json({ message: 'Therapist not found' });
+      }
     }
 
     // Verify patient exists
@@ -101,24 +104,26 @@ export const createAppointment = async (req, res) => {
       return res.status(404).json({ message: 'Patient not found' });
     }
 
-    // Check for time conflicts
-    const existingAppointment = await prisma.appointment.findFirst({
-      where: {
-        therapistId: parseInt(therapistId),
-        appointmentDate: new Date(appointmentDate),
-        startTime: startTime,
-        status: { not: 'cancelled' }
-      }
-    });
+    // Check for time conflicts (only if therapist is assigned)
+    if (therapistId) {
+      const existingAppointment = await prisma.appointment.findFirst({
+        where: {
+          therapistId: parseInt(therapistId),
+          appointmentDate: new Date(appointmentDate),
+          startTime: startTime,
+          status: { not: 'cancelled' }
+        }
+      });
 
-    if (existingAppointment) {
-      return res.status(409).json({ message: 'Time slot is already booked' });
+      if (existingAppointment) {
+        return res.status(409).json({ message: 'Time slot is already booked' });
+      }
     }
 
     // Create appointment
     const appointment = await prisma.appointment.create({
       data: {
-        therapistId: parseInt(therapistId),
+        therapistId: therapistId ? parseInt(therapistId) : null,
         patientId: parseInt(patientId),
         appointmentDate: new Date(appointmentDate),
         startTime,
@@ -194,18 +199,22 @@ export const deleteAppointment = async (req, res) => {
     if (isNaN(appointmentId) || appointmentId <= 0) {
       return res.status(400).json({ message: 'Invalid appointment ID' });
     }
-    
-    // First delete any related notifications
-    await prisma.notification.deleteMany({
-      where: { appointmentId: appointmentId }
+
+    // Check if appointment exists
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId }
     });
+
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
     
-    // Then delete the appointment
+    // Delete the appointment (notifications are linked to bookings, not appointments)
     await prisma.appointment.delete({ 
       where: { id: appointmentId } 
     });
     
-    res.json({ message: 'Appointment deleted' });
+    res.json({ message: 'Appointment deleted successfully' });
   } catch (error) {
     console.error('Error deleting appointment:', error);
     res.status(500).json({ message: 'Error deleting appointment', error: error.message });

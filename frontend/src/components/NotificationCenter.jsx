@@ -80,19 +80,17 @@ const NotificationCenter = () => {
       // Step 1: Create patient with unique email
       let patientId;
       try {
-        // Generate unique email using timestamp and phone
-        const uniqueEmail = `patient_${booking.phone}_${Date.now()}@booking.com`;
-        
+        // Don't send email - let backend auto-generate it
         const patientResponse = await apiClient.post('/patients', {
           fullName: booking.name,
           phone: booking.phone,
-          email: uniqueEmail,
-          gender: 'Other'
+          gender: 'Other',
+          age: booking.age ? parseInt(booking.age) : null
         });
         patientId = patientResponse.data.patient.id;
-        console.log('Patient created:', patientId);
+        console.log('✅ Patient created:', patientId);
       } catch (error) {
-        console.warn('Could not create new patient:', error.response?.data || error.message);
+        console.warn('⚠️ Could not create new patient:', error.response?.data || error.message);
         // Use a default patient ID if creation fails
         patientId = 1;
       }
@@ -105,17 +103,46 @@ const NotificationCenter = () => {
         const day = String(appointmentDate.getDate()).padStart(2, '0');
         const dateStr = `${year}-${month}-${day}`;
 
-        // Use different times to avoid conflicts (14:00 is a common default)
+        // Get the first available therapist from the admin portal data
+        // If no therapist ID is available, use null (therapist can be assigned later)
+        const therapistId = booking.therapistId || null;
+
+        // Use the booking time or default to 14:00
+        const startTime = booking.time || '14:00';
+        const [hours, minutes] = startTime.split(':');
+        const endHours = parseInt(hours) + 1; // End time is 1 hour later
+        const endTime = `${String(endHours).padStart(2, '0')}:${minutes || '00'}`;
+
+        console.log('📝 Creating appointment with:', {
+          patientId,
+          therapistId,
+          appointmentDate: dateStr,
+          startTime: startTime,
+          endTime: endTime,
+          status: 'pending',
+          notes: booking.message || booking.service
+        });
+
         const appointmentResponse = await apiClient.post('/appointments', {
           patientId: patientId,
-          therapistId: 1,
+          therapistId: therapistId,
           appointmentDate: dateStr,
-          startTime: '14:00', // Changed from 10:00 to avoid slot conflicts
-          endTime: '15:00',
+          startTime: startTime,
+          endTime: endTime,
           status: 'pending',
           notes: booking.message || booking.service,
         });
-        console.log('Appointment created:', appointmentResponse.data);
+        console.log('✅ Appointment created:', appointmentResponse.data);
+        
+        // Small delay to ensure database write completes
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Dispatch custom event to notify AdminPortal to refresh data
+        console.log('📢 Dispatching appointmentCreated event...');
+        window.dispatchEvent(new CustomEvent('appointmentCreated', { 
+          detail: { appointmentId: appointmentResponse.data.appointment?.id } 
+        }));
+        console.log('✅ Event dispatched');
       } catch (error) {
         console.error('Error creating appointment:', error.response?.data || error.message);
         // Continue even if appointment creation fails
@@ -226,8 +253,8 @@ const NotificationCenter = () => {
                   >
                     <ListItemText
                       primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', flex: 1 }}>
+                        <Box component="div" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <Typography variant="subtitle2" component="div" sx={{ fontWeight: 'bold', flex: 1 }}>
                             {notification.title}
                           </Typography>
                           <Chip
@@ -238,7 +265,7 @@ const NotificationCenter = () => {
                         </Box>
                       }
                       secondary={
-                        <Box sx={{ mt: 1 }}>
+                        <Box component="div" sx={{ mt: 1 }}>
                           <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
                             {notification.message}
                           </Typography>
@@ -246,47 +273,59 @@ const NotificationCenter = () => {
                           {/* Display booking details if available */}
                           {notification.booking && (
                             <Box sx={{ mt: 2, p: 1.5, backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-                              <Typography variant="caption" sx={{ display: 'block', fontWeight: 'bold', mb: 1 }}>
+                              <Typography variant="caption" component="div" sx={{ display: 'block', fontWeight: 'bold', mb: 1 }}>
                                 {language === 'ar' ? 'تفاصيل الحجز:' : 'Booking Details:'}
                               </Typography>
                               
                               {notification.booking.name && (
-                                <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                                <Typography variant="caption" component="div" sx={{ display: 'block', mb: 0.5 }}>
                                   <strong>{language === 'ar' ? 'الاسم:' : 'Name:'}</strong> {notification.booking.name}
                                 </Typography>
                               )}
                               
+                              {notification.booking.age && (
+                                <Typography variant="caption" component="div" sx={{ display: 'block', mb: 0.5 }}>
+                                  <strong>{language === 'ar' ? 'العمر:' : 'Age:'}</strong> {notification.booking.age}
+                                </Typography>
+                              )}
+                              
                               {notification.booking.phone && (
-                                <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                                <Typography variant="caption" component="div" sx={{ display: 'block', mb: 0.5 }}>
                                   <strong>{language === 'ar' ? 'الهاتف:' : 'Phone:'}</strong> {notification.booking.phone}
                                 </Typography>
                               )}
                               
-                              <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
-                                <strong>{language === 'ar' ? 'البريد الإلكتروني:' : 'Email:'}</strong> {notification.booking.email || 'N/A'}
+                              <Typography variant="caption" component="div" sx={{ display: 'block', mb: 0.5 }}>
+                                <strong>{language === 'ar' ? 'البريد الإلكتروني:' : 'Email:'}</strong> N/A
                               </Typography>
                               
                               {notification.booking.service && (
-                                <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                                <Typography variant="caption" component="div" sx={{ display: 'block', mb: 0.5 }}>
                                   <strong>{language === 'ar' ? 'الخدمة:' : 'Service:'}</strong> {notification.booking.service}
                                 </Typography>
                               )}
                               
                               {notification.booking.date && (
-                                <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                                <Typography variant="caption" component="div" sx={{ display: 'block', mb: 0.5 }}>
                                   <strong>{language === 'ar' ? 'التاريخ:' : 'Date:'}</strong> {new Date(notification.booking.date).toLocaleDateString()}
                                 </Typography>
                               )}
                               
+                              {notification.booking.time && (
+                                <Typography variant="caption" component="div" sx={{ display: 'block', mb: 0.5 }}>
+                                  <strong>{language === 'ar' ? 'الوقت:' : 'Time:'}</strong> {notification.booking.time}
+                                </Typography>
+                              )}
+                              
                               {notification.booking.message && (
-                                <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                                <Typography variant="caption" component="div" sx={{ display: 'block', mb: 0.5 }}>
                                   <strong>{language === 'ar' ? 'الرسالة:' : 'Message:'}</strong> {notification.booking.message}
                                 </Typography>
                               )}
                             </Box>
                           )}
                           
-                          <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 1 }}>
+                          <Typography variant="caption" color="textSecondary" component="div" sx={{ display: 'block', mt: 1 }}>
                             {new Date(notification.createdAt).toLocaleString()}
                           </Typography>
                           {notification.status === 'pending' && (

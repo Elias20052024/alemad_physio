@@ -11,6 +11,7 @@ const ModernLoginButton = ({
   variant = 'gradient',
   size = 'large',
   sx = {},
+  type = 'submit',
 }) => {
   const muiTheme = useMuiTheme();
   const { isDark } = useTheme();
@@ -156,6 +157,7 @@ const ModernLoginButton = ({
 
   return (
     <Button
+      type={type}
       onClick={onClick}
       disabled={disabled || loading}
       sx={{ ...getButtonStyle(), ...sx }}
