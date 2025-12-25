@@ -178,24 +178,62 @@ const PatientDashboardDB = () => {
         </Box>
 
         {appointments.length > 0 ? (
-          <TableContainer component={Paper}>
-            <Table>
+          <TableContainer component={Paper} sx={{
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            WebkitOverflowScrolling: 'touch'
+          }}>
+            <Table sx={{ minWidth: { xs: 600, sm: 800 } }}>
               <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Therapist</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Service</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Date & Time</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Duration</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }} align="center">Actions</TableCell>
+                  <TableCell sx={{ 
+                    fontWeight: 'bold',
+                    padding: { xs: '10px', sm: '16px' },
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                  }}>Therapist</TableCell>
+                  <TableCell sx={{ 
+                    fontWeight: 'bold',
+                    padding: { xs: '10px', sm: '16px' },
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                  }}>Service</TableCell>
+                  <TableCell sx={{ 
+                    fontWeight: 'bold',
+                    padding: { xs: '10px', sm: '16px' },
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                  }}>Date & Time</TableCell>
+                  <TableCell sx={{ 
+                    fontWeight: 'bold',
+                    padding: { xs: '10px', sm: '16px' },
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                  }}>Duration</TableCell>
+                  <TableCell sx={{ 
+                    fontWeight: 'bold',
+                    padding: { xs: '10px', sm: '16px' },
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                  }}>Status</TableCell>
+                  <TableCell sx={{ 
+                    fontWeight: 'bold',
+                    padding: { xs: '10px', sm: '16px' },
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                  }} align="center">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {appointments.map((appointment) => (
                   <TableRow key={appointment.id} hover>
-                    <TableCell>{appointment.therapist?.user?.name || appointment.therapist?.name || 'N/A'}</TableCell>
-                    <TableCell>{appointment.therapist?.specialization || appointment.therapist?.specialty || 'General'}</TableCell>
-                    <TableCell>
+                    <TableCell sx={{ 
+                      padding: { xs: '10px', sm: '16px' },
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                    }}>{appointment.therapist?.user?.name || appointment.therapist?.name || 'N/A'}</TableCell>
+                    <TableCell sx={{ 
+                      padding: { xs: '10px', sm: '16px' },
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                    }}>{appointment.therapist?.specialization || appointment.therapist?.specialty || 'General'}</TableCell>
+                    <TableCell sx={{ 
+                      padding: { xs: '10px', sm: '16px' },
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      whiteSpace: 'nowrap'
+                    }}>
                       <Stack spacing={0.5}>
                         <span>{appointment.appointmentDate ? new Date(appointment.appointmentDate).toLocaleDateString() : 'Invalid Date'}</span>
                         <span style={{ fontSize: '0.85rem', color: '#666' }}>
@@ -203,19 +241,30 @@ const PatientDashboardDB = () => {
                         </span>
                       </Stack>
                     </TableCell>
-                    <TableCell>{appointment.duration || '-'} min</TableCell>
-                    <TableCell>
+                    <TableCell sx={{ 
+                      padding: { xs: '10px', sm: '16px' },
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                    }}>{appointment.duration || '-'} min</TableCell>
+                    <TableCell sx={{ 
+                      padding: { xs: '10px', sm: '16px' },
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                    }}>
                       <Chip
                         label={getStatusLabel(appointment.status)}
                         color={getStatusColor(appointment.status)}
                         variant="outlined"
+                        size="small"
                       />
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell sx={{ 
+                      padding: { xs: '10px', sm: '16px' },
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                    }} align="center">
                       {appointment.status === 'scheduled' && (
                         <Button
                           size="small"
                           color="error"
+                          sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
                           onClick={() => {
                             setSelectedAppointmentId(appointment.id);
                             setCancelDialogOpen(true);

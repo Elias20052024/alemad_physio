@@ -203,26 +203,30 @@ const PatientDashboard = () => {
       </Box>
 
       {/* Appointments Table */}
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} sx={{
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        WebkitOverflowScrolling: 'touch'
+      }}>
+        <Table sx={{ minWidth: { xs: 600, sm: 800 } }}>
           <TableHead>
             <TableRow sx={{ bgcolor: '#1C6FB5' }}>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+              <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                 {language === 'ar' ? 'التاريخ' : 'Date'}
               </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+              <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                 {language === 'ar' ? 'الوقت' : 'Time'}
               </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+              <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                 {language === 'ar' ? 'المعالج' : 'Therapist'}
               </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+              <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                 {language === 'ar' ? 'الخدمة' : 'Service'}
               </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+              <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                 {language === 'ar' ? 'الحالة' : 'Status'}
               </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+              <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                 {language === 'ar' ? 'الإجراءات' : 'Actions'}
               </TableCell>
             </TableRow>
@@ -230,23 +234,39 @@ const PatientDashboard = () => {
           <TableBody>
             {appointments.map((appointment) => (
               <TableRow key={appointment.id} hover>
-                <TableCell>{appointment.date}</TableCell>
-                <TableCell>{appointment.time}</TableCell>
-                <TableCell>{appointment.therapist}</TableCell>
-                <TableCell>{appointment.service}</TableCell>
-                <TableCell>
+                <TableCell sx={{ padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' }, whiteSpace: 'nowrap' }}>{appointment.date}</TableCell>
+                <TableCell sx={{ padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' }, whiteSpace: 'nowrap' }}>{appointment.time}</TableCell>
+                <TableCell sx={{ padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{appointment.therapist}</TableCell>
+                <TableCell sx={{ padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{appointment.service}</TableCell>
+                <TableCell sx={{ padding: { xs: '10px', sm: '14px' } }}>
                   <Chip 
                     label={appointment.status} 
                     color={getStatusColor(appointment.status)}
                     size="small"
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell sx={{ padding: { xs: '10px', sm: '14px' }, display: 'flex', flexWrap: 'wrap', gap: { xs: 0.5, sm: 1 } }}>
+                  <IconButton 
+                    size="small" 
+                    color="primary"
+                    onClick={() => handleEditClick(appointment)}
+                    sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
+                  >
+                    <Edit />
+                  </IconButton>
+                  <IconButton 
+                    size="small" 
+                    color="error"
+                    onClick={() => handleCancelClick(appointment)}
+                    sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
+                  >
+                    <Delete />
+                  </IconButton>
                   <Button 
                     size="small" 
                     startIcon={<Edit />}
                     onClick={() => handleEditClick(appointment)}
-                    sx={{ mr: 1, color: '#1C6FB5' }}
+                    sx={{ mr: 1, color: '#1C6FB5', display: { xs: 'none', sm: 'inline-flex' } }}
                   >
                     {language === 'ar' ? 'تعديل' : 'Edit'}
                   </Button>
@@ -255,6 +275,7 @@ const PatientDashboard = () => {
                     startIcon={<Delete />}
                     onClick={() => handleCancelClick(appointment)}
                     color="error"
+                    sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
                   >
                     {language === 'ar' ? 'إلغاء' : 'Cancel'}
                   </Button>

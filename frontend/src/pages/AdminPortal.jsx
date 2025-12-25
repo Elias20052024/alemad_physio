@@ -836,40 +836,62 @@ const AdminPortal = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 3, md: 6 } }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3, md: 6 }, px: { xs: 1, sm: 2 } }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Box>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        mb: 4,
+        flexDirection: { xs: 'column', md: 'row' },
+        gap: { xs: 2, md: 0 }
+      }}>
+        <Box sx={{ textAlign: { xs: 'center', md: 'left' }, width: { xs: '100%', md: 'auto' } }}>
           <Typography
             variant="h2"
-            sx={{ color: '#1C6FB5', fontWeight: 'bold', fontSize: { xs: '1.8rem', md: '2.5rem' } }}
+            sx={{ color: '#1C6FB5', fontWeight: 'bold', fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' } }}
           >
             {language === 'ar' ? 'بوابة المسؤول' : 'Admin Portal'}
           </Typography>
-          <Typography variant="body1" sx={{ color: '#666', mt: 1 }}>
+          <Typography variant="body1" sx={{ color: '#666', mt: 1, fontSize: { xs: '0.9rem', md: '1rem' } }}>
             {language === 'ar' ? 'مرحباً ' + adminName : 'Welcome, ' + adminName}
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Box sx={{ 
+          display: 'flex', 
+          gap: { xs: 1, sm: 2 }, 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          justifyContent: { xs: 'center', md: 'flex-end' },
+          width: { xs: '100%', md: 'auto' }
+        }}>
           {/* Profile Card */}
-          <Card sx={{ p: 1.5, display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1.5, minWidth: '200px', bgcolor: '#f5f5f5', borderRadius: '10px' }}>
+          <Card sx={{ 
+            p: 1, 
+            display: { xs: 'none', sm: 'flex' }, 
+            alignItems: 'center', 
+            gap: 1.5, 
+            minWidth: '200px', 
+            bgcolor: '#f5f5f5', 
+            borderRadius: '10px' 
+          }}>
             <Avatar
               sx={{
-                width: 50,
-                height: 50,
+                width: 40,
+                height: 40,
                 bgcolor: '#1C6FB5',
                 color: 'white',
                 fontWeight: 'bold',
-                fontSize: '1.2rem'
+                fontSize: '1rem'
               }}
             >
               {adminName.split(' ').map(n => n[0]).join('').toUpperCase()}
             </Avatar>
-            <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 'bold', color: '#1C6FB5', fontSize: '0.95rem' }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography sx={{ fontWeight: 'bold', color: '#1C6FB5', fontSize: { xs: '0.8rem', md: '0.95rem' }, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {adminName}
               </Typography>
-              <Typography sx={{ fontSize: '0.8rem', color: '#666' }}>
+              <Typography sx={{ fontSize: { xs: '0.7rem', md: '0.8rem' }, color: '#666', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 @{adminName.toLowerCase().replace(/\s+/g, '')}
               </Typography>
             </Box>
@@ -1015,30 +1037,33 @@ const AdminPortal = () => {
         <TableContainer component={Paper} sx={{
           backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
           borderRadius: '10px',
-          marginTop: 3
+          marginTop: 3,
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          WebkitOverflowScrolling: 'touch'
         }}>
-          <Table>
+          <Table sx={{ minWidth: { xs: 600, sm: 800 } }}>
             <TableHead>
               <TableRow sx={{ bgcolor: '#1C6FB5' }}>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الاسم' : 'Name'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الهاتف' : 'Phone'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'العمر' : 'Age'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'تاريخ الانضمام' : 'Join Date'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الحالة' : 'Status'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الإجراءات' : 'Actions'}
                 </TableCell>
               </TableRow>
@@ -1051,11 +1076,11 @@ const AdminPortal = () => {
                     : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'),
                   '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' }
                 }}>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{patient.user?.name || 'N/A'}</TableCell>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{patient.user?.email || 'N/A'}</TableCell>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{patient.phone || 'N/A'}</TableCell>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{patient.age || 'N/A'}</TableCell>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{patient.createdAt ? new Date(patient.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{patient.user?.name || 'N/A'}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{patient.user?.email || 'N/A'}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{patient.phone || 'N/A'}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{patient.age || 'N/A'}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' }, whiteSpace: 'nowrap' }}>{patient.createdAt ? new Date(patient.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
                   <TableCell>
                     <Select
                       value={patient.status || 'active'}
@@ -1083,23 +1108,30 @@ const AdminPortal = () => {
                       </MenuItem>
                     </Select>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ padding: { xs: '10px', sm: '14px' }, display: 'flex', flexWrap: 'wrap', gap: { xs: 0.5, sm: 1 } }}>
                     <IconButton
                       size="small"
                       color="success"
                       href={`https://api.whatsapp.com/send?phone=${patient.phone}&text=%D9%85%D8%B1%D9%83%D8%B2%20%D8%A7%D9%84%D8%B9%D9%85%D8%A7%D8%AF%20%D9%84%D9%84%D8%B9%D9%84%D8%A7%D8%AC%20%D8%A7%D9%84%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%20%D9%88%D8%A7%D9%84%D8%AA%D8%A3%D9%87%D9%8A%D9%84%20%D9%8A%D8%B1%D8%AD%D8%A8%20%D8%A8%D9%83%D9%85%D8%8C%20%D9%88%D9%8A%D9%88%D8%AF%D9%91%20%D8%A7%D9%84%D8%AA%D8%A3%D9%83%D9%8A%D8%AF%20%D8%B9%D9%84%D9%89%20%D9%85%D9%88%D8%B9%D8%AF%20%D8%AC%D9%84%D8%B3%D8%A9%20%D8%A7%D9%84%D8%B9%D9%84%D8%A7%D8%AC:%20%F0%9F%95%92%20%D8%A7%D9%84%D8%B3%D8%A7%D8%B9%D8%A9:%2011:30%20%F0%9F%93%85%20%D8%A7%D9%84%D9%8A%D9%88%D9%85:%20(%D9%85%D8%AB%D8%A7%D9%84:%20%D8%A7%D9%84%D8%A7%D8%AB%D9%86%D9%8A%D9%86)%20%F0%9F%93%86%20%D8%A7%D9%84%D8%AA%D8%A7%D8%B1%D9%8A%D8%AE:%20(%D9%85%D8%AB%D8%A7%D9%84:%2025%20/%2012%20/%202025)%20%D8%B1%D8%A7%D8%AC%D9%8A%D9%86%20%D9%85%D9%86%D9%83%D9%85%20%D8%A7%D9%84%D8%A7%D9%84%D8%AA%D8%B2%D8%A7%D9%85%20%D8%A8%D8%A7%D9%84%D9%85%D9%88%D8%B9%D8%AF.%20%D8%B4%D8%A7%D9%83%D8%B1%D9%8A%D9%86%20%D8%AB%D9%82%D8%AA%D9%83%D9%85%20%D9%88%D8%A7%D8%AE%D8%AA%D9%8A%D8%A7%D8%B1%D9%83%D9%85%20%D9%84%D9%86%D8%A7`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      sx={{ mr: 1 }}
                     >
                       <WhatsAppIcon />
                     </IconButton>
-                    <Button size="small" startIcon={<Edit />} sx={{ mr: 1, color: '#1C6FB5' }} onClick={() => handleOpenEditDialog('patient', patient)}>
-                      {language === 'ar' ? 'تعديل' : 'Edit'}
-                    </Button>
-                    <Button size="small" startIcon={<Delete />} color="error" onClick={() => handleDelete('patient', patient.id)}>
-                      {language === 'ar' ? 'حذف' : 'Delete'}
-                    </Button>
+                    <IconButton 
+                      size="small" 
+                      color="primary" 
+                      onClick={() => handleOpenEditDialog('patient', patient)}
+                    >
+                      <Edit />
+                    </IconButton>
+                    <IconButton 
+                      size="small" 
+                      color="error" 
+                      onClick={() => handleDelete('patient', patient.id)}
+                    >
+                      <Delete />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
               ))}
@@ -1113,24 +1145,27 @@ const AdminPortal = () => {
         <TableContainer component={Paper} sx={{
           backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
           borderRadius: '10px',
-          marginTop: 3
+          marginTop: 3,
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          WebkitOverflowScrolling: 'touch'
         }}>
-          <Table>
+          <Table sx={{ minWidth: { xs: 600, sm: 800 } }}>
             <TableHead>
               <TableRow sx={{ bgcolor: '#1C6FB5' }}>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الاسم' : 'Name'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'رقم الهاتف' : 'Phone'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الحالة' : 'Status'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الإجراءات' : 'Actions'}
                 </TableCell>
               </TableRow>
@@ -1143,9 +1178,9 @@ const AdminPortal = () => {
                     : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'),
                   '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' }
                 }}>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.name}</TableCell>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.user?.email || therapist.email || 'N/A'}</TableCell>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{therapist.phone || 'N/A'}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{therapist.name}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{therapist.user?.email || therapist.email || 'N/A'}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{therapist.phone || 'N/A'}</TableCell>
                   <TableCell>
                     <Select
                       value={therapist.status || 'active'}
@@ -1198,27 +1233,30 @@ const AdminPortal = () => {
         <TableContainer component={Paper} sx={{
           backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
           borderRadius: '10px',
-          marginTop: 3
+          marginTop: 3,
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          WebkitOverflowScrolling: 'touch'
         }}>
-          <Table>
+          <Table sx={{ minWidth: { xs: 600, sm: 800 } }}>
             <TableHead>
               <TableRow sx={{ bgcolor: '#1C6FB5' }}>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'اسم المريض' : 'Patient Name'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'اسم المعالج' : 'Therapist Name'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'التاريخ' : 'Date'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الوقت' : 'Time'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الحالة' : 'Status'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الإجراءات' : 'Actions'}
                 </TableCell>
               </TableRow>
@@ -1329,24 +1367,27 @@ const AdminPortal = () => {
         <TableContainer component={Paper} sx={{
           backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
           borderRadius: '10px',
-          marginTop: 3
+          marginTop: 3,
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          WebkitOverflowScrolling: 'touch'
         }}>
-          <Table>
+          <Table sx={{ minWidth: { xs: 600, sm: 800 } }}>
             <TableHead>
               <TableRow sx={{ backgroundColor: '#1C6FB5' }}>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الاسم' : 'Name'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الدور' : 'Role'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الحالة' : 'Status'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: '16px' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الإجراءات' : 'Actions'}
                 </TableCell>
               </TableRow>
@@ -1359,9 +1400,9 @@ const AdminPortal = () => {
                     : (index % 2 === 0 ? '#ffffff' : '#f9f9f9'),
                   '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#404040' : '#e3f2fd' }
                 }}>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{admin.name}</TableCell>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{admin.email}</TableCell>
-                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: '14px' }}>{admin.role}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{admin.name}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{admin.email}</TableCell>
+                  <TableCell sx={{ color: theme.palette.mode === 'dark' ? '#e0e0e0' : '#333', padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{admin.role}</TableCell>
                   <TableCell>
                     <Select
                       value={admin.status || 'active'}

@@ -323,23 +323,27 @@ const TherapistPortal = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
+        <TableContainer component={Paper} sx={{
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          WebkitOverflowScrolling: 'touch'
+        }}>
+          <Table sx={{ minWidth: { xs: 600, sm: 800 } }}>
             <TableHead>
               <TableRow sx={{ bgcolor: '#1C6FB5' }}>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'المريض' : 'Patient'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'التاريخ' : 'Date'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الوقت' : 'Time'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الحالة' : 'Status'}
                 </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', padding: { xs: '10px', sm: '16px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {language === 'ar' ? 'الإجراءات' : 'Actions'}
                 </TableCell>
               </TableRow>
@@ -351,10 +355,10 @@ const TherapistPortal = () => {
                   const appointmentDate = new Date(appointment.appointmentDate);
                   return (
                     <TableRow key={appointment.id} hover>
-                      <TableCell>{patientName}</TableCell>
-                      <TableCell>{appointmentDate.toLocaleDateString()}</TableCell>
-                      <TableCell>{appointment.startTime}</TableCell>
-                      <TableCell>
+                      <TableCell sx={{ padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{patientName}</TableCell>
+                      <TableCell sx={{ padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' }, whiteSpace: 'nowrap' }}>{appointmentDate.toLocaleDateString()}</TableCell>
+                      <TableCell sx={{ padding: { xs: '10px', sm: '14px' }, fontSize: { xs: '0.75rem', sm: '0.875rem' }, whiteSpace: 'nowrap' }}>{appointment.startTime}</TableCell>
+                      <TableCell sx={{ padding: { xs: '10px', sm: '14px' } }}>
                         <Chip 
                           label={getStatusLabel(appointment.status)} 
                           color={getStatusColor(appointment.status)}
