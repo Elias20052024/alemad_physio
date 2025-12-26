@@ -131,6 +131,10 @@ const AdminPortal = () => {
   const [admins, setAdmins] = useState([]);
 
   const [patients, setPatients] = useState([]);
+  
+  // Search states
+  const [patientSearch, setPatientSearch] = useState('');
+  const [therapistSearch, setTherapistSearch] = useState('');
 
   // Function to refresh all data from API
   const refreshAllData = async () => {
@@ -256,10 +260,18 @@ const AdminPortal = () => {
 
           // Format appointments to include patient and therapist names
           const formattedAppointments = (appointmentsResponse.data || []).map((apt, idx) => {
+            // Get therapist name with better fallbacks
+            let therapistName = 'Unassigned';
+            if (apt.therapist) {
+              therapistName = apt.therapist?.user?.name || apt.therapist?.name || 'Unassigned';
+            } else if (!apt.therapistId) {
+              therapistName = 'Not Assigned';
+            }
+            
             const formatted = {
               id: apt.id,
               patientName: apt.patient?.user?.name || apt.patient?.fullName || 'Unknown',
-              therapistName: apt.therapist?.user?.name || apt.therapist?.name || (apt.therapistId ? 'Unassigned' : 'No Therapist'),
+              therapistName: therapistName,
               date: apt.appointmentDate ? new Date(apt.appointmentDate).toLocaleDateString() : 'N/A',
               time: apt.startTime || 'N/A',
               status: (apt.status || 'pending').trim(),
@@ -305,10 +317,18 @@ const AdminPortal = () => {
 
       // Format appointments to include patient and therapist names
       const formattedAppointments = (appointmentsResponse.data || []).map((apt, idx) => {
+        // Get therapist name with better fallbacks
+        let therapistName = 'Unassigned';
+        if (apt.therapist) {
+          therapistName = apt.therapist?.user?.name || apt.therapist?.name || 'Unassigned';
+        } else if (!apt.therapistId) {
+          therapistName = 'Not Assigned';
+        }
+        
         const formatted = {
           id: apt.id,
           patientName: apt.patient?.user?.name || apt.patient?.fullName || 'Unknown',
-          therapistName: apt.therapist?.user?.name || apt.therapist?.name || (apt.therapistId ? 'Unassigned' : 'No Therapist'),
+          therapistName: therapistName,
           date: apt.appointmentDate ? new Date(apt.appointmentDate).toLocaleDateString() : 'N/A',
           time: apt.startTime || 'N/A',
           status: (apt.status || 'pending').trim(),
@@ -427,11 +447,16 @@ const AdminPortal = () => {
         password: ''
       };
     } else if (type === 'appointment') {
-      // Convert date format for appointment edit dialog
+      // Convert date format for appointment edit dialog and extract IDs
       mappedData = {
         ...item,
-        date: formatDateForInput(item.date || item.appointmentDate)
+        date: formatDateForInput(item.date || item.appointmentDate),
+        therapistId: item.therapistId || '',
+        patientId: item.patientId || '',
+        time: item.time || item.startTime || '',
+        service: item.service || ''
       };
+      console.log('📋 Mapping appointment for edit:', { item, mappedData });
     }
 
     setFormData(mappedData);
@@ -660,18 +685,28 @@ const AdminPortal = () => {
         await refreshAllData();
       } else if (dialogType === 'appointment') {
         // Create appointment data with IDs
+        const therapistId = formData.therapistId ? parseInt(formData.therapistId) : null;
+        const patientId = formData.patientId ? parseInt(formData.patientId) : null;
+        
+        if (!patientId || !therapistId) {
+          setSnackbar({ open: true, message: 'Please select both a patient and therapist', severity: 'error' });
+          return;
+        }
+
         const appointmentData = {
-          therapistId: parseInt(formData.therapistId),
-          patientId: parseInt(formData.patientId),
+          therapistId: therapistId,
+          patientId: patientId,
           appointmentDate: formData.date,
           startTime: formData.time,
           endTime: formData.time,
           service: formData.service || 'General'
         };
 
+        console.log('Sending appointment update:', appointmentData);
         const response = await axios.put(`${API_BASE_URL}/appointments/${editingId}`, appointmentData, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        console.log('Update response:', response.data);
         setSnackbar({ open: true, message: 'Appointment updated successfully!', severity: 'success' });
         handleCloseEditDialog();
         await refreshAllData();
@@ -1890,13 +1925,13 @@ const AdminPortal = () => {
                 fullWidth
                 select
                 label={language === 'ar' ? 'اسم المريض' : 'Patient Name'}
-                value={formData.patientName || ''}
-                onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                value={formData.patientId || ''}
+                onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}
                 margin="normal"
                 required
               >
                 {patients.map((p) => (
-                  <MenuItem key={p.id} value={p.fullName}>
+                  <MenuItem key={p.id} value={p.id}>
                     {p.fullName}
                   </MenuItem>
                 ))}
@@ -1905,13 +1940,13 @@ const AdminPortal = () => {
                 fullWidth
                 select
                 label={language === 'ar' ? 'اسم المعالج' : 'Therapist Name'}
-                value={formData.therapistName || ''}
-                onChange={(e) => setFormData({ ...formData, therapistName: e.target.value })}
+                value={formData.therapistId || ''}
+                onChange={(e) => setFormData({ ...formData, therapistId: e.target.value })}
                 margin="normal"
                 required
               >
                 {therapists.map((t) => (
-                  <MenuItem key={t.id} value={t.name}>
+                  <MenuItem key={t.id} value={t.id}>
                     {t.name}
                   </MenuItem>
                 ))}

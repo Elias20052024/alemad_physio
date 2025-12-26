@@ -25,6 +25,8 @@ const BookingPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   const [formData, setFormData] = useState({
     patientId: '',
@@ -41,6 +43,24 @@ const BookingPage = () => {
   useEffect(() => {
     fetchInitialData();
   }, []);
+
+  const fetchAvailableSlots = async (therapistId, date) => {
+    if (!therapistId || !date) {
+      setAvailableSlots([]);
+      return;
+    }
+
+    setLoadingSlots(true);
+    try {
+      const response = await appointmentService.getAvailableSlots(therapistId, date);
+      setAvailableSlots(response.data?.slots || []);
+    } catch (error) {
+      console.error('Error fetching available slots:', error);
+      setAvailableSlots([]);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
 
   const fetchInitialData = async () => {
     try {
@@ -149,7 +169,14 @@ const BookingPage = () => {
                 select
                 SelectProps={{ native: true }}
                 value={formData.therapistId}
-                onChange={(e) => setFormData({ ...formData, therapistId: e.target.value })}
+                onChange={(e) => {
+                  const therapistId = e.target.value;
+                  setFormData({ ...formData, therapistId });
+                  // Fetch available slots when therapist changes
+                  if (formData.date) {
+                    fetchAvailableSlots(therapistId, formData.date);
+                  }
+                }}
                 required
                 disabled={submitting}
                 variant="outlined"
@@ -187,7 +214,14 @@ const BookingPage = () => {
                 label={t('booking.date') || 'Date'}
                 type="date"
                 value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                onChange={(e) => {
+                  const date = e.target.value;
+                  setFormData({ ...formData, date, time: '' }); // Reset time when date changes
+                  // Fetch available slots when date changes
+                  if (formData.therapistId) {
+                    fetchAvailableSlots(formData.therapistId, date);
+                  }
+                }}
                 InputLabelProps={{ shrink: true }}
                 required
                 disabled={submitting}
@@ -201,15 +235,26 @@ const BookingPage = () => {
                 id="time-input"
                 fullWidth
                 label={t('booking.time') || 'Time'}
-                type="time"
+                select
+                SelectProps={{ native: true }}
                 value={formData.time}
                 onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                InputLabelProps={{ shrink: true }}
                 required
-                disabled={submitting}
+                disabled={submitting || loadingSlots || !formData.therapistId || !formData.date}
                 variant="outlined"
                 size="small"
-              />
+              >
+                <option value="">{loadingSlots ? 'Loading available times...' : 'Select Time'}</option>
+                {availableSlots.length > 0 ? (
+                  availableSlots.map((slot) => (
+                    <option key={slot} value={slot}>{slot}</option>
+                  ))
+                ) : (
+                  formData.therapistId && formData.date && !loadingSlots && (
+                    <option disabled>No available slots for this date</option>
+                  )
+                )}
+              </TextField>
             </Grid>            <Grid item xs={12}>
               <Typography variant="h6" sx={{ fontWeight: 'bold', mt: 1, mb: 1.5, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                 {t('booking.patientInfo') || 'Patient Information'}

@@ -147,7 +147,35 @@ export const createAppointment = async (req, res) => {
 export const updateAppointment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { startTime, endTime, status, appointmentDate, notes } = req.body;
+    const { startTime, endTime, status, appointmentDate, notes, therapistId, patientId } = req.body;
+
+    console.log('🔧 Updating appointment:', { id, therapistId, patientId, startTime, appointmentDate });
+
+    // Verify therapist exists if provided
+    if (therapistId) {
+      const therapist = await prisma.therapist.findUnique({
+        where: { id: parseInt(therapistId) }
+      });
+
+      if (!therapist) {
+        console.error('❌ Therapist not found:', therapistId);
+        return res.status(404).json({ message: 'Therapist not found' });
+      }
+      console.log('✓ Therapist found:', therapist.id);
+    }
+
+    // Verify patient exists if provided
+    if (patientId) {
+      const patient = await prisma.patient.findUnique({
+        where: { id: parseInt(patientId) }
+      });
+
+      if (!patient) {
+        console.error('❌ Patient not found:', patientId);
+        return res.status(404).json({ message: 'Patient not found' });
+      }
+      console.log('✓ Patient found:', patient.id);
+    }
 
     const appointment = await prisma.appointment.update({
       where: { id: parseInt(id) },
@@ -156,7 +184,9 @@ export const updateAppointment = async (req, res) => {
         ...(startTime && { startTime }),
         ...(endTime && { endTime }),
         ...(status && { status: status.trim() }),
-        ...(notes !== undefined && { notes })
+        ...(notes !== undefined && { notes }),
+        ...(therapistId !== undefined && { therapistId: therapistId ? parseInt(therapistId) : null }),
+        ...(patientId !== undefined && { patientId: parseInt(patientId) })
       },
       include: { 
         therapist: { include: { user: true } },
@@ -164,6 +194,7 @@ export const updateAppointment = async (req, res) => {
       }
     });
 
+    console.log('✅ Appointment updated successfully:', { id: appointment.id, therapistId: appointment.therapistId, therapistName: appointment.therapist?.user?.name });
     res.json(appointment);
   } catch (error) {
     console.error('Error updating appointment:', error);
