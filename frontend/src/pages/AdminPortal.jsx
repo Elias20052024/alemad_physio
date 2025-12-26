@@ -135,6 +135,7 @@ const AdminPortal = () => {
   // Search states
   const [patientSearch, setPatientSearch] = useState('');
   const [therapistSearch, setTherapistSearch] = useState('');
+  const [appointmentSearch, setAppointmentSearch] = useState('');
 
   // Function to refresh all data from API
   const refreshAllData = async () => {
@@ -870,6 +871,50 @@ const AdminPortal = () => {
     }
   };
 
+  // Filter functions for search
+  const filteredPatients = patients.filter((patient) => {
+    const searchLower = patientSearch.toLowerCase();
+    const fullName = (patient.user?.name || patient.fullName || '').toLowerCase();
+    const email = (patient.user?.email || patient.email || '').toLowerCase();
+    const phone = (patient.phone || '').toLowerCase();
+    
+    return (
+      fullName.includes(searchLower) ||
+      email.includes(searchLower) ||
+      phone.includes(searchLower)
+    );
+  });
+
+  const filteredTherapists = therapists.filter((therapist) => {
+    const searchLower = therapistSearch.toLowerCase();
+    const name = (therapist.user?.name || therapist.name || '').toLowerCase();
+    const email = (therapist.user?.email || therapist.email || '').toLowerCase();
+    const phone = (therapist.phone || '').toLowerCase();
+    
+    return (
+      name.includes(searchLower) ||
+      email.includes(searchLower) ||
+      phone.includes(searchLower)
+    );
+  });
+
+  const filteredAppointments = appointments.filter((appointment) => {
+    const searchLower = appointmentSearch.toLowerCase();
+    const patientName = (appointment.patientName || '').toLowerCase();
+    const therapistName = (appointment.therapistName || '').toLowerCase();
+    const date = (appointment.date || '').toLowerCase();
+    const time = (appointment.time || '').toLowerCase();
+    const status = (appointment.status || '').toLowerCase();
+    
+    return (
+      patientName.includes(searchLower) ||
+      therapistName.includes(searchLower) ||
+      date.includes(searchLower) ||
+      time.includes(searchLower) ||
+      status.includes(searchLower)
+    );
+  });
+
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3, md: 6 }, px: { xs: 1, sm: 2 } }}>
       {/* Header */}
@@ -1024,6 +1069,39 @@ const AdminPortal = () => {
               <Tab label={language === 'ar' ? 'المسؤولين' : 'Admins'} />
             </Tabs>
           </Box>
+          
+          {/* Search Field - Shows based on active tab */}
+          {tabValue === 0 && (
+            <TextField
+              placeholder={language === 'ar' ? 'ابحث عن مريض...' : 'Search patients...'}
+              value={patientSearch}
+              onChange={(e) => setPatientSearch(e.target.value)}
+              variant="outlined"
+              size="small"
+              sx={{ width: { xs: '100%', sm: 200 }, flexShrink: 0 }}
+            />
+          )}
+          {tabValue === 1 && (
+            <TextField
+              placeholder={language === 'ar' ? 'ابحث عن معالج...' : 'Search therapists...'}
+              value={therapistSearch}
+              onChange={(e) => setTherapistSearch(e.target.value)}
+              variant="outlined"
+              size="small"
+              sx={{ width: { xs: '100%', sm: 200 }, flexShrink: 0 }}
+            />
+          )}
+          {tabValue === 2 && (
+            <TextField
+              placeholder={language === 'ar' ? 'ابحث عن موعد...' : 'Search appointments...'}
+              value={appointmentSearch}
+              onChange={(e) => setAppointmentSearch(e.target.value)}
+              variant="outlined"
+              size="small"
+              sx={{ width: { xs: '100%', sm: 200 }, flexShrink: 0 }}
+            />
+          )}
+          
           {tabValue === 0 && (
             <Button
               variant="contained"
@@ -1069,8 +1147,9 @@ const AdminPortal = () => {
 
       {/* Patients Table */}
       {tabValue === 0 && (
-        <TableContainer component={Paper} sx={{
-          backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
+        <>
+          <TableContainer component={Paper} sx={{
+            backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
           borderRadius: '10px',
           marginTop: 3,
           overflowX: 'auto',
@@ -1104,7 +1183,7 @@ const AdminPortal = () => {
               </TableRow>
             </TableHead>
             <TableBody key={refreshKey}>
-              {patients.map((patient, index) => (
+              {filteredPatients.map((patient, index) => (
                 <TableRow key={`${patient.id}-${refreshKey}`} hover sx={{
                   backgroundColor: theme.palette.mode === 'dark'
                     ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
@@ -1173,12 +1252,14 @@ const AdminPortal = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        </>
       )}
 
       {/* Therapists Table */}
       {tabValue === 1 && (
-        <TableContainer component={Paper} sx={{
-          backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
+        <>
+          <TableContainer component={Paper} sx={{
+            backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
           borderRadius: '10px',
           marginTop: 3,
           overflowX: 'auto',
@@ -1206,7 +1287,7 @@ const AdminPortal = () => {
               </TableRow>
             </TableHead>
             <TableBody key={refreshKey}>
-              {therapists.map((therapist, index) => (
+              {filteredTherapists.map((therapist, index) => (
                 <TableRow key={`${therapist.id}-${refreshKey}`} hover sx={{
                   backgroundColor: theme.palette.mode === 'dark'
                     ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
@@ -1261,18 +1342,20 @@ const AdminPortal = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        </>
       )}
 
       {/* Appointments Table */}
       {tabValue === 2 && (
-        <TableContainer component={Paper} sx={{
-          backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
-          borderRadius: '10px',
-          marginTop: 3,
-          overflowX: 'auto',
-          overflowY: 'hidden',
-          WebkitOverflowScrolling: 'touch'
-        }}>
+        <>
+          <TableContainer component={Paper} sx={{
+            backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
+            borderRadius: '10px',
+            marginTop: 3,
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            WebkitOverflowScrolling: 'touch'
+          }}>
           <Table sx={{ minWidth: { xs: 600, sm: 800 } }}>
             <TableHead>
               <TableRow sx={{ bgcolor: '#1C6FB5' }}>
@@ -1298,9 +1381,9 @@ const AdminPortal = () => {
             </TableHead>
             <TableBody key={refreshKey}>
               {(() => {
-                console.log('🎯 Rendering appointments table, appointments.length:', appointments?.length || 0, 'appointments:', appointments);
+                console.log('🎯 Rendering appointments table, filteredAppointments.length:', filteredAppointments?.length || 0, 'appointments:', filteredAppointments);
                 
-                if (!appointments || appointments.length === 0) {
+                if (!filteredAppointments || filteredAppointments.length === 0) {
                   return (
                     <TableRow>
                       <TableCell colSpan={6} sx={{ textAlign: 'center', py: 3, color: '#999' }}>
@@ -1310,7 +1393,7 @@ const AdminPortal = () => {
                   );
                 }
                 
-                return appointments.map((appointment, index) => (
+                return filteredAppointments.map((appointment, index) => (
                 <TableRow key={`${appointment.id}-${appointment.type || 'admin'}-${refreshKey}`} hover sx={{
                   backgroundColor: appointment.status === 'cancelled'
                     ? (theme.palette.mode === 'dark' ? '#4a2a2a' : '#ffe6e6')
@@ -1395,6 +1478,7 @@ const AdminPortal = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        </>
       )}
 
       {/* Admins Table */}
