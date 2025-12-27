@@ -4,7 +4,7 @@ command = "npm install && npm run build"
 publish = "dist"
 
 [env.production]
-VITE_API_BASE_URL = "https://your-backend-api.onrender.com/api"
+VITE_API_BASE_URL = "https://alemad-physio.onrender.com/api"
 VITE_APP_NAME = "Alemad Physio"
 
 [[redirects]]
