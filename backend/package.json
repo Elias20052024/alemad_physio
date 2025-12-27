@@ -9,7 +9,8 @@
     "dev": "nodemon src/server.js",
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "seed": "node seed.js"
   },
   "keywords": [
     "physiotherapy",
