@@ -37,8 +37,10 @@ export const sendBookingNotificationToAdmin = async (booking) => {
           <div style="background-color: white; padding: 20px; border-radius: 0 0 8px 8px;">
             <p><strong>Client Name:</strong> ${booking.name}</p>
             <p><strong>Phone:</strong> ${booking.phone}</p>
+            <p><strong>Age:</strong> ${booking.age || 'Not provided'}</p>
             <p><strong>Service:</strong> ${booking.service}</p>
             <p><strong>Requested Date:</strong> ${bookingDate}</p>
+            <p><strong>Time:</strong> ${booking.time || 'Not specified'}</p>
             <p><strong>Message:</strong> ${booking.message || 'No message provided'}</p>
             <p><strong>Status:</strong> <span style="color: #FF9800; font-weight: bold;">PENDING</span></p>
             
@@ -55,8 +57,8 @@ export const sendBookingNotificationToAdmin = async (booking) => {
             <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
             
             <p style="color: #999; font-size: 12px; text-align: center;">
-              Booking ID: ${booking.id}<br>
-              Created: ${new Date(booking.createdAt).toLocaleString()}
+              Booking ID: ${booking.id || 'N/A'}<br>
+              Created: ${booking.createdAt ? new Date(booking.createdAt).toLocaleString() : 'N/A'}
             </p>
           </div>
         </div>

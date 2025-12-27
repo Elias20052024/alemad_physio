@@ -7,6 +7,8 @@ export const createBooking = async (req, res) => {
   try {
     const { name, phone, email, service, date, time, age, message } = req.body;
 
+    console.log('📝 Received booking request:', { name, phone, email, service, date, time, age, message });
+
     // Validation
     if (!name || !phone || !date) {
       return res.status(400).json({
@@ -27,6 +29,8 @@ export const createBooking = async (req, res) => {
       });
     }
 
+    console.log('✅ Validation passed, creating booking...');
+
     // Create booking record (no therapist required)
     const booking = await prisma.booking.create({
       data: {
@@ -41,6 +45,8 @@ export const createBooking = async (req, res) => {
       },
     });
 
+    console.log('✅ Booking created successfully:', booking);
+
     // Create notification for the booking
     try {
       await prisma.notification.create({
@@ -53,24 +59,18 @@ export const createBooking = async (req, res) => {
           status: 'pending'
         }
       });
+      console.log('✅ Notification created successfully');
     } catch (notificationError) {
-      console.error('Error creating notification:', notificationError);
+      console.error('⚠️ Error creating notification:', notificationError.message);
       // Continue even if notification fails
     }
 
     // Notify admin about new booking via email
     try {
-      await sendBookingNotificationToAdmin({
-        name,
-        phone,
-        email,
-        service,
-        date: bookingDate,
-        time: time || '10:00',
-        message,
-      });
+      await sendBookingNotificationToAdmin(booking);
+      console.log('✅ Email notification sent to admin');
     } catch (emailError) {
-      console.error('Error sending email notification:', emailError);
+      console.error('⚠️ Error sending email notification:', emailError.message);
       // Continue even if email fails
     }
 
@@ -80,7 +80,7 @@ export const createBooking = async (req, res) => {
       data: booking,
     });
   } catch (error) {
-    console.error('Error creating booking:', error);
+    console.error('❌ Error creating booking:', error);
     res.status(500).json({
       success: false,
       message: 'Error creating booking',
