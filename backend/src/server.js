@@ -93,6 +93,25 @@ app.get('/health', (req, res) => {
   res.json({ status: 'Backend is running!', timestamp: new Date() });
 });
 
+// Database health check
+app.get('/api/db-health', async (req, res) => {
+  try {
+    const patientCount = await prisma.patient.count();
+    const therapistCount = await prisma.therapist.count();
+    res.json({ 
+      status: 'Database connected',
+      patients: patientCount,
+      therapists: therapistCount,
+      timestamp: new Date()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Database connection failed',
+      message: error.message 
+    });
+  }
+});
+
 // Routes
 app.use('/api/admin', adminRoutes);
 app.use('/api/therapists', therapistRoutes);
