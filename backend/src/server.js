@@ -112,6 +112,43 @@ app.get('/api/db-health', async (req, res) => {
   }
 });
 
+// Detailed database diagnostic endpoint
+app.get('/api/db-diagnostic', async (req, res) => {
+  try {
+    console.log('🔍 Running database diagnostic...');
+    
+    const patientCount = await prisma.patient.count();
+    const therapistCount = await prisma.therapist.count();
+    const appointmentCount = await prisma.appointment.count();
+    const userCount = await prisma.user.count();
+    
+    // Get sample data without relations
+    const patients = await prisma.patient.findMany({ take: 5 });
+    const therapists = await prisma.therapist.findMany({ take: 5 });
+    
+    res.json({ 
+      status: 'Database diagnostic complete',
+      counts: {
+        patients: patientCount,
+        therapists: therapistCount,
+        appointments: appointmentCount,
+        users: userCount
+      },
+      samples: {
+        patients: patients.slice(0, 2),
+        therapists: therapists.slice(0, 2)
+      },
+      timestamp: new Date()
+    });
+  } catch (error) {
+    console.error('❌ Diagnostic error:', error);
+    res.status(500).json({ 
+      error: 'Database diagnostic failed',
+      message: error.message 
+    });
+  }
+});
+
 // Routes
 app.use('/api/admin', adminRoutes);
 app.use('/api/therapists', therapistRoutes);
