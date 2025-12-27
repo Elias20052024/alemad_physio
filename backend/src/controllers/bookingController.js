@@ -47,22 +47,24 @@ export const createBooking = async (req, res) => {
 
     console.log('✅ Booking created successfully:', booking);
 
-    // Create notification for the booking
-    try {
-      await prisma.notification.create({
-        data: {
-          bookingId: booking.id,
-          type: 'booking_request',
-          title: `New Booking Request from ${name}`,
-          message: `${name} has requested a booking for ${service} on ${bookingDate.toLocaleDateString()} - Phone: ${phone}`,
-          isRead: false,
-          status: 'pending'
-        }
-      });
-      console.log('✅ Notification created successfully');
-    } catch (notificationError) {
-      console.error('⚠️ Error creating notification:', notificationError.message);
-      // Continue even if notification fails
+    // Create notification for the booking (wrapped in try-catch to prevent blocking)
+    if (booking && booking.id) {
+      try {
+        await prisma.notification.create({
+          data: {
+            bookingId: booking.id,
+            type: 'booking_request',
+            title: `New Booking Request from ${name}`,
+            message: `${name} has requested a booking for ${service} on ${bookingDate.toLocaleDateString()} - Phone: ${phone}`,
+            isRead: false,
+            status: 'pending'
+          }
+        });
+        console.log('✅ Notification created successfully');
+      } catch (notificationError) {
+        console.error('⚠️ Error creating notification:', notificationError.message);
+        // Continue even if notification fails - don't let this block the booking
+      }
     }
 
     // Notify admin about new booking via email
