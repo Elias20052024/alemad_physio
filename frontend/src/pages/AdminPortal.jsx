@@ -255,25 +255,33 @@ const AdminPortal = () => {
 
         // Fetch patients
         const patientsResponse = await patientService.getAllPatients();
-        console.log('📊 Fetched patients from API:', patientsResponse);
-        const patientsData = patientsResponse.data || patientsResponse || [];
-        console.log('📊 Patients data to set:', patientsData);
-        const mappedPatients = Array.isArray(patientsData) ? patientsData.map(p => ({
+        console.log('📊 Fetched patients response:', patientsResponse);
+        let patientsData = patientsResponse?.data || patientsResponse || [];
+        if (!Array.isArray(patientsData)) {
+          console.warn('⚠️ Patients data is not an array:', typeof patientsData);
+          patientsData = [];
+        }
+        console.log('✅ Patients data count:', patientsData.length);
+        const mappedPatients = patientsData.map(p => ({
           ...p,
           fullName: p.user?.name || p.fullName || 'Unknown'
-        })) : [];
+        }));
         console.log('📊 Mapped patients:', mappedPatients);
         setPatients(mappedPatients);
 
         // Fetch therapists
         const therapistsResponse = await therapistService.getAllTherapists();
-        console.log('👨‍⚕️ Fetched therapists from API:', therapistsResponse);
-        const therapistsData = therapistsResponse.data || therapistsResponse || [];
-        console.log('👨‍⚕️ Therapists data to set:', therapistsData);
-        const mappedTherapists = Array.isArray(therapistsData) ? therapistsData.map(t => ({
+        console.log('👨‍⚕️ Fetched therapists response:', therapistsResponse);
+        let therapistsData = therapistsResponse?.data || therapistsResponse || [];
+        if (!Array.isArray(therapistsData)) {
+          console.warn('⚠️ Therapists data is not an array:', typeof therapistsData);
+          therapistsData = [];
+        }
+        console.log('✅ Therapists data count:', therapistsData.length);
+        const mappedTherapists = therapistsData.map(t => ({
           ...t,
           name: t.user?.name || t.name || 'Unknown'
-        })) : [];
+        }));
         console.log('👨‍⚕️ Mapped therapists:', mappedTherapists);
         setTherapists(mappedTherapists);
 
