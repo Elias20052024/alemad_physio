@@ -1228,7 +1228,10 @@ const AdminPortal = () => {
               </TableRow>
             </TableHead>
             <TableBody key={refreshKey}>
-              {filteredPatients.map((patient, index) => (
+              {filteredPatients && filteredPatients.length > 0 ? (
+                filteredPatients.map((patient, index) => {
+                  console.log('🔹 Rendering patient row:', patient.id, patient.user?.name);
+                  return (
                 <TableRow key={`${patient.id}-${refreshKey}`} hover sx={{
                   backgroundColor: theme.palette.mode === 'dark'
                     ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
@@ -1293,7 +1296,15 @@ const AdminPortal = () => {
                     </IconButton>
                   </TableCell>
                 </TableRow>
-              ))}
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan="7" align="center" sx={{ padding: '20px' }}>
+                    {language === 'ar' ? 'لا توجد بيانات' : 'No data available'}
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -1332,7 +1343,10 @@ const AdminPortal = () => {
               </TableRow>
             </TableHead>
             <TableBody key={refreshKey}>
-              {filteredTherapists.map((therapist, index) => (
+              {filteredTherapists && filteredTherapists.length > 0 ? (
+                filteredTherapists.map((therapist, index) => {
+                  console.log('🔹 Rendering therapist row:', therapist.id, therapist.name);
+                  return (
                 <TableRow key={`${therapist.id}-${refreshKey}`} hover sx={{
                   backgroundColor: theme.palette.mode === 'dark'
                     ? (index % 2 === 0 ? '#333333' : '#3a3a3a')
@@ -1383,7 +1397,15 @@ const AdminPortal = () => {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan="5" align="center" sx={{ padding: '20px' }}>
+                    {language === 'ar' ? 'لا توجد بيانات' : 'No data available'}
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </TableContainer>
