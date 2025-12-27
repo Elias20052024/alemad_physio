@@ -110,11 +110,11 @@ app.listen(PORT, async () => {
   console.log(`📍 Health check: http://localhost:${PORT}/health`);
   console.log(`📚 API Documentation: http://localhost:${PORT}/api`);
   
-  // Initialize admin on startup
-  await initializeAdmin();
+  // Initialize admin on startup (run in background, don't block)
+  initializeAdmin().catch(err => console.error('Admin init error:', err));
   
-  // Seed test data if database is empty
-  await seedTestData();
+  // Seed test data if database is empty (run in background, don't block)
+  seedTestData().catch(err => console.error('Seed error:', err));
 });
 
 export default app;
