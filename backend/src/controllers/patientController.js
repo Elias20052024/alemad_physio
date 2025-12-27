@@ -6,11 +6,20 @@ const prisma = new PrismaClient();
 
 export const getAllPatients = async (req, res) => {
   try {
-    // First try without relations to debug
-    const patients = await prisma.patient.findMany();
+    console.log('🔍 Fetching all patients from database...');
+    const patients = await prisma.patient.findMany({
+      include: {
+        user: true
+      }
+    });
+    console.log(`✅ Found ${patients.length} patients`);
+    if (patients.length === 0) {
+      console.warn('⚠️ WARNING: No patients found in database!');
+    }
     res.json(patients || []);
   } catch (error) {
     console.error('❌ Error fetching patients:', error.message);
+    console.error('Stack:', error.stack);
     res.status(500).json({ error: error.message });
   }
 };
