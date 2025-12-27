@@ -3,6 +3,8 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import { errorHandler } from './middleware/auth.js';
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 // Import routes
 import adminRoutes from './routes/adminRoutes.js';
@@ -16,6 +18,42 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const prisma = new PrismaClient();
+
+// Initialize default admin if it doesn't exist
+const initializeAdmin = async () => {
+  try {
+    const adminExists = await prisma.user.findUnique({
+      where: { email: 'admin@alemad.com' }
+    });
+
+    if (!adminExists) {
+      console.log('📝 Creating default admin user...');
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      const adminUser = await prisma.user.create({
+        data: {
+          email: 'admin@alemad.com',
+          password: hashedPassword,
+          name: 'Admin User',
+          role: 'admin',
+        },
+      });
+
+      await prisma.admin.create({
+        data: {
+          userId: adminUser.id,
+          status: 'active',
+        },
+      });
+
+      console.log('✅ Default admin created: admin@alemad.com / admin123');
+    } else {
+      console.log('✅ Admin user already exists');
+    }
+  } catch (error) {
+    console.error('⚠️ Error initializing admin:', error.message);
+  }
+};
 
 // Configure CORS with environment variable
 const allowedOrigins = process.env.CORS_ORIGIN 
@@ -51,10 +89,13 @@ app.use('/api/notifications', notificationRoutes);
 app.use(errorHandler);
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`✅ Server is running on port ${PORT}`);
   console.log(`📍 Health check: http://localhost:${PORT}/health`);
   console.log(`📚 API Documentation: http://localhost:${PORT}/api`);
+  
+  // Initialize admin on startup
+  await initializeAdmin();
 });
 
 export default app;
