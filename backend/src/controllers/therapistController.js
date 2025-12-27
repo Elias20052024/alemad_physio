@@ -7,11 +7,8 @@ const prisma = new PrismaClient();
 
 export const getAllTherapists = async (req, res) => {
   try {
-    const therapists = await prisma.therapist.findMany({
-      include: {
-        user: true
-      }
-    });
+    // First try without relations to debug
+    const therapists = await prisma.therapist.findMany();
     res.json(therapists);
   } catch (error) {
     console.error('❌ Error fetching therapists:', error.message);
