@@ -9,8 +9,20 @@ const transporter = nodemailer.createTransport({
   },
   tls: {
     rejectUnauthorized: false // Allow self-signed certificates
-  }
+  },
+  connectionTimeout: 5000, // 5 seconds timeout
+  socketTimeout: 5000 // 5 seconds socket timeout
 });
+
+// Wrapper to add timeout to email operations
+const withTimeout = (promise, timeoutMs = 5000) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Email send timeout')), timeoutMs)
+    )
+  ]);
+};
 
 export const sendBookingNotificationToAdmin = async (booking) => {
   try {
@@ -65,11 +77,12 @@ export const sendBookingNotificationToAdmin = async (booking) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
+    await withTimeout(transporter.sendMail(mailOptions), 5000);
     console.log('✅ Booking notification email sent to admin:', adminEmail);
     return true;
   } catch (error) {
-    console.error('❌ Error sending booking notification email:', error);
+    console.error('❌ Error sending booking notification email:', error.message);
+    // Don't throw - let the booking go through even if email fails
     return false;
   }
 };
@@ -121,11 +134,12 @@ export const sendBookingConfirmationToClient = async (booking) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
+    await withTimeout(transporter.sendMail(mailOptions), 5000);
     console.log('✅ Booking confirmation email sent to client');
     return true;
   } catch (error) {
-    console.error('❌ Error sending confirmation email to client:', error);
+    console.error('❌ Error sending confirmation email to client:', error.message);
+    // Don't throw - let the booking go through even if email fails
     return false;
   }
 };
