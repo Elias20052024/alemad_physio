@@ -3,6 +3,9 @@ import { sendBookingNotificationToAdmin, sendBookingConfirmationToClient } from 
 
 const prisma = new PrismaClient();
 
+// Disable email sending - focus on API stability
+const SEND_EMAILS = false;
+
 export const createBooking = async (req, res) => {
   try {
     const { name, phone, email, service, date, time, age, message } = req.body;
@@ -68,12 +71,12 @@ export const createBooking = async (req, res) => {
     }
 
     // Notify admin about new booking via email
-    try {
-      await sendBookingNotificationToAdmin(booking);
-      console.log('✅ Email notification sent to admin');
-    } catch (emailError) {
-      console.error('⚠️ Error sending email notification:', emailError.message);
-      // Continue even if email fails
+    // Running async without awaiting to avoid blocking the response
+    if (SEND_EMAILS && booking && booking.id) {
+      sendBookingNotificationToAdmin(booking).catch(emailError => {
+        console.error('⚠️ Error sending email notification:', emailError.message);
+      });
+      // Don't await - let it send in background
     }
 
     res.status(201).json({
