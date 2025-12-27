@@ -7,16 +7,26 @@ const prisma = new PrismaClient();
 export const getAllPatients = async (req, res) => {
   try {
     console.log('🔍 Fetching all patients from database...');
-    const patients = await prisma.patient.findMany({
-      include: {
-        user: true
-      }
-    });
+    // Simplified query without relations to avoid hangs
+    const patients = await prisma.patient.findMany();
     console.log(`✅ Found ${patients.length} patients`);
     if (patients.length === 0) {
       console.warn('⚠️ WARNING: No patients found in database!');
     }
-    res.json(patients || []);
+    // Add user information separately if needed
+    const patientsWithUsers = await Promise.all(
+      patients.map(async (patient) => {
+        try {
+          const user = await prisma.user.findUnique({
+            where: { id: patient.userId }
+          });
+          return { ...patient, user };
+        } catch (e) {
+          return { ...patient, user: null };
+        }
+      })
+    );
+    res.json(patientsWithUsers || []);
   } catch (error) {
     console.error('❌ Error fetching patients:', error.message);
     console.error('Stack:', error.stack);

@@ -8,16 +8,26 @@ const prisma = new PrismaClient();
 export const getAllTherapists = async (req, res) => {
   try {
     console.log('🔍 Fetching all therapists from database...');
-    const therapists = await prisma.therapist.findMany({
-      include: {
-        user: true
-      }
-    });
+    // Simplified query without relations to avoid hangs
+    const therapists = await prisma.therapist.findMany();
     console.log(`✅ Found ${therapists.length} therapists`);
     if (therapists.length === 0) {
       console.warn('⚠️ WARNING: No therapists found in database!');
     }
-    res.json(therapists);
+    // Add user information separately if needed
+    const therapistsWithUsers = await Promise.all(
+      therapists.map(async (therapist) => {
+        try {
+          const user = await prisma.user.findUnique({
+            where: { id: therapist.userId }
+          });
+          return { ...therapist, user };
+        } catch (e) {
+          return { ...therapist, user: null };
+        }
+      })
+    );
+    res.json(therapistsWithUsers);
   } catch (error) {
     console.error('❌ Error fetching therapists:', error.message);
     console.error('Stack:', error.stack);
