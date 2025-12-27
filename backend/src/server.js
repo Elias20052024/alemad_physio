@@ -20,7 +20,7 @@ const PORT = process.env.PORT || 5000;
 // Configure CORS with environment variable
 const allowedOrigins = process.env.CORS_ORIGIN 
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-  : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://127.0.0.1:3000'];
+  : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://127.0.0.1:3000', 'https://alemadphysio.netlify.app'];
 
 console.log('🔐 CORS Origins:', allowedOrigins);
 
