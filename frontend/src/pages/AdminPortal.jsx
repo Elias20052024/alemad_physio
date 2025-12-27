@@ -53,6 +53,43 @@ const formatDateForDisplay = (dateString) => {
   }
 };
 
+// Helper function to check if appointment date is today
+const isAppointmentToday = (appointment) => {
+  if (!appointment) {
+    console.warn('⚠️ isAppointmentToday: appointment is null/undefined');
+    return false;
+  }
+  
+  try {
+    const today = new Date();
+    const todayString = today.toLocaleDateString(); // This will match the formatted date string
+    
+    // Get the appointment date in the same format
+    let appointmentDateString = null;
+    
+    // If we have the raw appointmentDate, format it the same way
+    if (appointment.appointmentDate) {
+      appointmentDateString = new Date(appointment.appointmentDate).toLocaleDateString();
+    }
+    // Otherwise use the already-formatted date field
+    else if (appointment.date && typeof appointment.date === 'string') {
+      appointmentDateString = appointment.date;
+    }
+    
+    if (!appointmentDateString) {
+      console.warn('⚠️ isAppointmentToday: no date found in appointment', appointment);
+      return false;
+    }
+    
+    const isToday = appointmentDateString === todayString;
+    console.log(`📅 Comparing dates - Today: ${todayString}, Appointment: ${appointmentDateString}, Match: ${isToday}`);
+    return isToday;
+  } catch (e) {
+    console.error('❌ Error checking if appointment is today:', e, appointment);
+    return false;
+  }
+};
+
 // Specialty options for therapists
 const specialtyOptions = [
   { value: 'Physical Therapy', label: 'العلاج الطبيعي', labelEn: 'Physical Therapy' },
@@ -1424,6 +1461,28 @@ const AdminPortal = () => {
                       const statusValue = (appointment.status || 'pending').trim();
                       const validStatuses = ['pending', 'scheduled', 'completed', 'cancelled'];
                       const safeStatus = validStatuses.includes(statusValue) ? statusValue : 'pending';
+                      const isToday = isAppointmentToday(appointment);
+                      
+                      // Only show the status dropdown for today's appointments
+                      if (!isToday) {
+                        return (
+                          <Chip
+                            label={
+                              safeStatus === 'pending' ? (language === 'ar' ? 'قيد الانتظار' : 'Pending') :
+                              safeStatus === 'scheduled' ? (language === 'ar' ? 'مجدول' : 'Scheduled') :
+                              safeStatus === 'completed' ? (language === 'ar' ? 'مكتمل' : 'Completed') :
+                              safeStatus === 'cancelled' ? (language === 'ar' ? 'ملغي' : 'Cancelled') : safeStatus
+                            }
+                            sx={{
+                              backgroundColor: getStatusColor(safeStatus),
+                              color: 'white',
+                              fontWeight: 'bold',
+                              cursor: 'default'
+                            }}
+                          />
+                        );
+                      }
+                      
                       return (
                         <Select
                           value={safeStatus}
