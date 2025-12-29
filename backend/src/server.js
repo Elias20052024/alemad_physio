@@ -4,6 +4,10 @@ import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import { errorHandler } from './middleware/auth.js';
 
+// Set Prisma env vars before config
+process.env.PRISMA_SKIP_ENGINE_CHECK = 'true';
+process.env.PRISMA_SKIP_VALIDATION = 'true';
+
 dotenv.config();
 
 const app = express();
