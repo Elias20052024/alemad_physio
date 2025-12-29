@@ -2,7 +2,13 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-const prisma = new PrismaClient();
+let prisma;
+try {
+  prisma = new PrismaClient({ errorFormat: 'minimal' });
+} catch (error) {
+  console.warn('⚠️ Prisma warning:', error.message);
+  prisma = null;
+}
 
 export const getAllPatients = async (req, res) => {
   try {
