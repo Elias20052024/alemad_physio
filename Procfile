@@ -1,1 +1,1 @@
-web: cd backend && npm install && npm run prisma:generate && npm run migrate:deploy && node src/server.js
+web: cd backend && npm install && npx prisma generate && npx prisma db push --skip-generate --skip-validation && node src/server.js
