@@ -1,14 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma.js';
 import { hashPassword, comparePassword } from '../utils/password.js';
 import { generateToken } from '../utils/jwt.js';
-
-let prisma;
-try {
-  prisma = new PrismaClient({ errorFormat: 'minimal' });
-} catch (error) {
-  console.warn('⚠️ Prisma warning:', error.message);
-  prisma = null;
-}
 
 export const adminLogin = async (req, res) => {
   try {

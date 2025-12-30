@@ -1,12 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-let prisma;
-try {
-  prisma = new PrismaClient({ errorFormat: 'minimal' });
-} catch (error) {
-  console.warn('⚠️ Prisma warning:', error.message);
-  prisma = null;
-}
+import prisma from '../lib/prisma.js';
 
 export const getAllNotifications = async (req, res) => {
   try {

@@ -1,13 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma.js';
 import { sendBookingNotificationToAdmin, sendBookingConfirmationToClient } from '../utils/email.js';
-
-let prisma;
-try {
-  prisma = new PrismaClient({ errorFormat: 'minimal' });
-} catch (error) {
-  console.warn('⚠️ Prisma warning:', error.message);
-  prisma = null;
-}
 
 export const createBooking = async (req, res) => {
   try {
