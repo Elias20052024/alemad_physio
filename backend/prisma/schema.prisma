@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,78 +8,68 @@ datasource db {
 }
 
 model User {
-  id        Int     @id @default(autoincrement())
-  email     String  @unique
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
   password  String
   name      String
-  role      String  // admin, therapist, patient
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
+  role      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  admin     Admin?
   patient   Patient?
   therapist Therapist?
-  admin     Admin?
 }
 
 model Patient {
-  id            Int     @id @default(autoincrement())
-  userId        Int     @unique
-  phone         String?
-  age           Int?
-  dateOfBirth   DateTime?
-  gender        String?
+  id             Int           @id @default(autoincrement())
+  userId         Int           @unique
+  phone          String?
+  age            Int?
+  dateOfBirth    DateTime?
+  gender         String?
   medicalHistory String?
-  status        String  @default("active") // active, inactive
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  appointments  Appointment[]
+  status         String        @default("active")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  appointments   Appointment[]
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Therapist {
-  id              Int     @id @default(autoincrement())
-  userId          Int     @unique
-  phone           String?
-  specialization  String?
-  availability    String?
-  status          String  @default("active") // active, inactive
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relations
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  appointments    Appointment[]
+  id             Int           @id @default(autoincrement())
+  userId         Int           @unique
+  phone          String?
+  specialization String?
+  availability   String?
+  status         String        @default("active")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  appointments   Appointment[]
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Admin {
-  id        Int     @id @default(autoincrement())
-  userId    Int     @unique
-  status    String  @default("active") // active, inactive
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  status    String   @default("active")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Appointment {
-  id            Int     @id @default(autoincrement())
-  patientId     Int
-  therapistId   Int?    // Optional - therapist can be assigned later
+  id              Int        @id @default(autoincrement())
+  patientId       Int
+  therapistId     Int?
   appointmentDate DateTime
-  startTime     String
-  endTime       String
-  status        String  @default("pending") // pending, confirmed, completed, cancelled
-  notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
-  patient       Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  therapist     Therapist? @relation(fields: [therapistId], references: [id], onDelete: SetNull)
+  startTime       String
+  endTime         String
+  status          String     @default("pending")
+  notes           String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  patient         Patient    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  therapist       Therapist? @relation(fields: [therapistId], references: [id])
 
   @@index([patientId])
   @@index([therapistId])
@@ -90,29 +77,25 @@ model Appointment {
 }
 
 model Service {
-  id          Int     @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String
   description String?
-  duration    Int     // in minutes
+  duration    Int
   price       Float
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model Booking {
-  id            Int     @id @default(autoincrement())
+  id            Int            @id @default(autoincrement())
   name          String
   phone         String
-  age           Int?    // Age of the patient
   service       String
   date          DateTime
-  time          String?  // Time for the booking (HH:MM format)
   message       String?
-  status        String  @default("pending") // pending, confirmed, completed, cancelled
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
+  status        String         @default("pending")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   notifications Notification[]
 
   @@index([date])
@@ -121,17 +104,17 @@ model Booking {
 }
 
 model LoginLog {
-  id        Int     @id @default(autoincrement())
-  userId    Int?
-  email     String?
-  role      String?
-  loginTime DateTime @default(now())
+  id         Int       @id @default(autoincrement())
+  userId     Int?
+  email      String?
+  role       String?
+  loginTime  DateTime  @default(now())
   logoutTime DateTime?
-  ipAddress String?
-  userAgent String?
-  status    String   @default("success") // success, failed
-  reason    String?  // reason for failed login
-  createdAt DateTime @default(now())
+  ipAddress  String?
+  userAgent  String?
+  status     String    @default("success")
+  reason     String?
+  createdAt  DateTime  @default(now())
 
   @@index([userId])
   @@index([email])
@@ -140,17 +123,15 @@ model LoginLog {
 }
 
 model Notification {
-  id        Int     @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   bookingId Int
-  type      String  @default("booking_request") // booking_request, status_change
+  type      String   @default("booking_request")
   title     String
   message   String
-  isRead    Boolean @default(false)
-  status    String  @default("pending") // pending, accepted, rejected
+  isRead    Boolean  @default(false)
+  status    String   @default("pending")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations
   booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([bookingId])

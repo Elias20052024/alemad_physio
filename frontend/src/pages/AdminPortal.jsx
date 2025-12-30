@@ -18,6 +18,33 @@ const clearAppointmentsCache = () => {
   sessionStorage.removeItem('appointmentsList');
 };
 
+// Clear legacy localStorage data (old bookings, etc.) - keep only auth data
+const clearLegacyData = () => {
+  const essentialKeys = [
+    'token',
+    'userId',
+    'userRole',
+    'userName',
+    'userEmail',
+    'isLoggedIn',
+    'adminPortalTab'
+  ];
+
+  const allKeys = Object.keys(localStorage);
+  let removedCount = 0;
+
+  allKeys.forEach(key => {
+    if (!essentialKeys.includes(key)) {
+      localStorage.removeItem(key);
+      removedCount++;
+    }
+  });
+
+  if (removedCount > 0) {
+    console.log(`✅ Cleared ${removedCount} legacy data entries. All data now comes from database.`);
+  }
+};
+
 // Helper functions for date conversion
 const formatDateForInput = (dateString) => {
   if (!dateString) return '';
@@ -212,42 +239,60 @@ const AdminPortal = () => {
   useEffect(() => {
     const fetchAllData = async () => {
       try {
+        // Clear old legacy data on first load
+        clearLegacyData();
+        
         // Clear any cached appointments to ensure fresh data
         clearAppointmentsCache();
 
         // Fetch patients
-        const patientsResponse = await patientService.getAllPatients();
-        console.log('📊 Fetched patients from API:', patientsResponse);
-        const patientsData = patientsResponse.data || patientsResponse || [];
-        console.log('📊 Patients data to set:', patientsData);
-        const mappedPatients = Array.isArray(patientsData) ? patientsData.map(p => ({
-          ...p,
-          fullName: p.user?.name || p.fullName || 'Unknown'
-        })) : [];
-        console.log('📊 Mapped patients:', mappedPatients);
-        setPatients(mappedPatients);
+        try {
+          const patientsResponse = await patientService.getAllPatients();
+          console.log('📊 Fetched patients from API:', patientsResponse);
+          const patientsData = patientsResponse.data || patientsResponse || [];
+          console.log('📊 Patients data to set:', patientsData);
+          const mappedPatients = Array.isArray(patientsData) ? patientsData.map(p => ({
+            ...p,
+            fullName: p.user?.name || p.fullName || 'Unknown'
+          })) : [];
+          console.log('📊 Mapped patients:', mappedPatients);
+          setPatients(mappedPatients);
+        } catch (error) {
+          console.error('Error fetching patients:', error.response?.status, error.response?.data || error.message);
+          setPatients([]);
+        }
 
         // Fetch therapists
-        const therapistsResponse = await therapistService.getAllTherapists();
-        console.log('👨‍⚕️ Fetched therapists from API:', therapistsResponse);
-        const therapistsData = therapistsResponse.data || therapistsResponse || [];
-        console.log('👨‍⚕️ Therapists data to set:', therapistsData);
-        const mappedTherapists = Array.isArray(therapistsData) ? therapistsData.map(t => ({
-          ...t,
-          name: t.user?.name || t.name || 'Unknown'
-        })) : [];
-        console.log('👨‍⚕️ Mapped therapists:', mappedTherapists);
-        setTherapists(mappedTherapists);
+        try {
+          const therapistsResponse = await therapistService.getAllTherapists();
+          console.log('👨‍⚕️ Fetched therapists from API:', therapistsResponse);
+          const therapistsData = therapistsResponse.data || therapistsResponse || [];
+          console.log('👨‍⚕️ Therapists data to set:', therapistsData);
+          const mappedTherapists = Array.isArray(therapistsData) ? therapistsData.map(t => ({
+            ...t,
+            name: t.user?.name || t.name || 'Unknown'
+          })) : [];
+          console.log('👨‍⚕️ Mapped therapists:', mappedTherapists);
+          setTherapists(mappedTherapists);
+        } catch (error) {
+          console.error('Error fetching therapists:', error.response?.status, error.response?.data || error.message);
+          setTherapists([]);
+        }
 
         // Fetch admins (using API call)
         try {
-          const adminsResponse = await axios.get(`${API_BASE_URL}/admin/list`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          console.log('👤 Fetched admins from API:', adminsResponse.data);
-          setAdmins(adminsResponse.data || []);
+          if (token) {
+            const adminsResponse = await axios.get(`${API_BASE_URL}/admin/list`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log('👤 Fetched admins from API:', adminsResponse.data);
+            setAdmins(adminsResponse.data || []);
+          } else {
+            console.warn('⚠️ No token found, skipping admins fetch');
+            setAdmins([]);
+          }
         } catch (error) {
-          console.error('Error fetching admins:', error);
+          console.error('Error fetching admins:', error.response?.status, error.response?.data || error.message);
           setAdmins([]);
         }
 
@@ -744,9 +789,12 @@ const AdminPortal = () => {
           phone: formData.phone,
           age: formData.age ? parseInt(formData.age) : null,
           gender: formData.gender,
-          email: formData.email,
           password: formData.password
         };
+        // Only include email if provided (backend will auto-generate if omitted)
+        if (formData.email && formData.email.trim()) {
+          patientData.email = formData.email;
+        }
         await axios.post(`${API_BASE_URL}/patients`, patientData, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -1570,7 +1618,9 @@ const AdminPortal = () => {
                 value={formData.email || ''}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 margin="normal"
-                required
+                placeholder={language === 'ar' ? 'اترك فارغاً للإنشاء التلقائي' : 'Leave blank to auto-generate'}
+                helperText={language === 'ar' ? 'اختياري - سيتم إنشاء واحد تلقائياً إذا لم يتم تقديمه' : 'Optional - auto-generated if not provided'}
+                autoComplete="off"
               />
               <TextField
                 fullWidth
@@ -1578,6 +1628,7 @@ const AdminPortal = () => {
                 value={formData.phone || ''}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 margin="normal"
+                placeholder={language === 'ar' ? '0501234567' : '0501234567'}
                 required
               />
               <TextField
@@ -1845,7 +1896,9 @@ const AdminPortal = () => {
                 value={formData.email || ''}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 margin="normal"
-                required
+                placeholder={language === 'ar' ? 'اترك فارغاً للاحتفاظ بالحالي' : 'Leave blank to keep current'}
+                helperText={language === 'ar' ? 'اختياري' : 'Optional'}
+                autoComplete="off"
               />
               <TextField
                 fullWidth

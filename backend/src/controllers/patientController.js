@@ -83,9 +83,16 @@ export const createPatient = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password || 'default-password', 10);
 
     // Create User first (required for Patient)
+    // Generate unique email if not provided
+    let userEmail = email;
+    if (!userEmail || userEmail.trim() === '') {
+      // Generate unique email with timestamp and random suffix
+      userEmail = `patient-${Date.now()}-${Math.random().toString(36).substring(2, 9)}@alemad-clinic.com`;
+    }
+
     const user = await prisma.user.create({
       data: {
-        email: email || `patient-${Date.now()}@alemad-clinic.com`,
+        email: userEmail,
         password: hashedPassword,
         name: fullName.trim(),
         role: 'patient'
