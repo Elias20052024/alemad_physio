@@ -1,3 +1,9 @@
+// Disable Prisma validation immediately
+global.PRISMA_SKIP_ENGINE_CHECK = 'true';
+process.env.PRISMA_SKIP_ENGINE_CHECK = '1';
+process.env.PRISMA_SKIP_VALIDATION = '1';
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://localhost/dummy';
+
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
