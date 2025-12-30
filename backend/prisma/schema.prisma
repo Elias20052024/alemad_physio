@@ -59,44 +59,18 @@ model Admin {
 }
 
 model Appointment {
-  id              Int      @id @default(autoincrement())
+  id              Int        @id @default(autoincrement())
   patientId       Int
   therapistId     Int?
   appointmentDate DateTime
   startTime       String
   endTime         String
-  status          String   @default("pending")
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  patient         Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  therapist       Therapist? @relation(fields: [therapistId], references: [id], onDelete: SetNull)
-
-  @@index([patientId])
-  @@index([therapistId])
-  @@index([appointmentDate])
-}
-  patientId       Int
-  therapistId     Int?
-  appointmentDate DateTime
-  startTime       String
-  endTime         String
-<<<<<<< HEAD
   status          String     @default("pending")
   notes           String?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   patient         Patient    @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  therapist       Therapist? @relation(fields: [therapistId], references: [id])
-=======
-  status          String  @default("pending")
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  patient   Patient    @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  therapist Therapist? @relation(fields: [therapistId], references: [id], onDelete: SetNull)
->>>>>>> d805ef356f073f3b52505232e4283e630f8db0a1
+  therapist       Therapist? @relation(fields: [therapistId], references: [id], onDelete: SetNull)
 
   @@index([patientId])
   @@index([therapistId])
