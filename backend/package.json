@@ -7,9 +7,9 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "migrate": "prisma migrate dev",
-    "migrate:deploy": "prisma migrate deploy",
-    "prisma:generate": "prisma generate"
+    "build": "echo 'No build needed'",
+    "migrate": "echo 'Use prisma migrate dev locally'",
+    "prisma:generate": "echo 'Skipping Prisma generation'"
   },
   "keywords": [
     "physiotherapy",

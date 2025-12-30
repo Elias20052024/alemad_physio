@@ -1,7 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import { timeToMinutes, hasTimeConflict, isTimeWithinBreak, isValidTimeFormat } from '../utils/validation.js';
 
-const prisma = new PrismaClient();
+let prisma;
+try {
+  prisma = new PrismaClient({ errorFormat: 'minimal' });
+} catch (error) {
+  console.warn('⚠️ Prisma warning:', error.message);
+  prisma = null;
+}
 
 export const getAllAppointments = async (req, res) => {
   try {

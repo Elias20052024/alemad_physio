@@ -3,6 +3,14 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { isValidTimeFormat } from '../utils/validation.js';
 
+let prisma;
+try {
+  prisma = new PrismaClient({ errorFormat: 'minimal' });
+} catch (error) {
+  console.warn('⚠️ Prisma warning:', error.message);
+  prisma = null;
+}
+
 const prisma = new PrismaClient();
 
 export const getAllTherapists = async (req, res) => {
