@@ -33,6 +33,9 @@ const AdminLogin = () => {
       localStorage.setItem('userName', response.data.admin?.name || 'Admin');
       navigate('/admin/dashboard');
     } catch (err) {
+      // Clear login state on failed login
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('token');
       setError(err.response?.data?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);

@@ -228,11 +228,17 @@ const Login = () => {
             return;
           }
         } catch (error) {
+          // Clear login state on failed login
+          localStorage.removeItem('isLoggedIn');
+          localStorage.removeItem('token');
           setError(error.response?.data?.message || (language === 'ar' ? 'فشل تسجيل الدخول' : 'Login failed'));
           setLoading(false);
         }
       }
     } catch (err) {
+      // Clear login state on error
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('token');
       const errorMessage = err.response?.data?.message || (language === 'ar' ? 'فشل تسجيل الدخول' : 'Login failed');
       setError(errorMessage);
     } finally {
